@@ -5,11 +5,11 @@ Este sistema tem como objetivo auxiliar estudantes na organização e acompanham
 
 ## ✨ Funcionalidades Principais
 
-* [cite_start]**📅 Cronograma Semanal:** Interface visual para definir disciplinas e metas para cada dia da semana[cite: 13].
-* [cite_start]**📝 Diário de Estudos:** Registro detalhado do conteúdo estudado e tempo dedicado[cite: 19].
-* [cite_start]**🧠 Revisões Automáticas:** O sistema calcula e agenda automaticamente as revisões baseadas na data do estudo inicial[cite: 21].
-* [cite_start]**📊 Relatórios de Desempenho:** Visualização de estatísticas sobre estudos realizados e revisões pendentes/atrasadas[cite: 26].
-* [cite_start]**🔒 Acesso Individual:** Suporte a múltiplos usuários com persistência de dados isolada[cite: 28].
+📅 Cronograma Semanal:** Interface visual para definir disciplinas e metas para cada dia da semana[cite: 13].
+📝 Diário de Estudos:** Registro detalhado do conteúdo estudado e tempo dedicado[cite: 19].
+🧠 Revisões Automáticas:** O sistema calcula e agenda automaticamente as revisões baseadas na data do estudo inicial[cite: 21].
+📊 Relatórios de Desempenho:** Visualização de estatísticas sobre estudos realizados e revisões pendentes/atrasadas[cite: 26].
+🔒 Acesso Individual:** Suporte a múltiplos usuários com persistência de dados isolada[cite: 28].
 
 ## 🛠️ Tecnologias Utilizadas
 
