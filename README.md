@@ -1,7 +1,7 @@
 # 📚 Sistema de Gerenciamento de Estudos
 
 ## 🎯 Sobre o Projeto
-Este sistema tem como objetivo auxiliar estudantes na organização e acompanhamento de suas rotinas acadêmicas. [cite_start]O foco principal é a aplicação do método de **Revisões Espaçadas**, automatizando o agendamento de revisões para fixação de conteúdo ($D+1$, $D+7$, $D+14$)[cite: 5, 7, 22].
+Este sistema tem como objetivo auxiliar estudantes na organização e acompanhamento de suas rotinas acadêmicas. 
 
 ## ✨ Funcionalidades Principais
 
