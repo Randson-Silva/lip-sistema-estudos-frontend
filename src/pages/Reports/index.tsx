@@ -1,1 +1,0 @@
-export const Reports = () => <h1>Relatórios</h1>;

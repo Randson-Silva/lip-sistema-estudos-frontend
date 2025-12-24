@@ -1,1 +1,0 @@
-export const DailyLog = () => <h1>Registrar Estudo</h1>;

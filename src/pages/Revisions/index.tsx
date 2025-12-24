@@ -1,1 +1,0 @@
-export const Revisions = () => <h1>Minhas Revisões</h1>;
