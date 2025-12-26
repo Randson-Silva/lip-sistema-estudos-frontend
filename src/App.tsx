@@ -8,6 +8,9 @@ import RegistrarEstudo from "./pages/RegistrarEstudo";
 import Revisoes from "./pages/Revisoes";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
+import Cadastro from "./pages/Cadastro";
+// import Login from "./pages/Login";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,7 +23,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/registrar" replace />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/registrar" element={<RegistrarEstudo />} />
             <Route path="/revisoes" element={<Revisoes />} />
             <Route path="/relatorios" element={<Relatorios />} />
