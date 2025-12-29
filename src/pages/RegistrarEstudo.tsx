@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/MainLayout'; // [PADRONIZAÇÃO] Usa o layout novo
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns'; // [1] Importei addDays
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DISCIPLINES, DisciplineColor } from '@/types/study';
@@ -23,8 +23,11 @@ export default function RegistrarEstudo() {
   const editId = searchParams.get('edit');
   const dateParam = searchParams.get('date');
 
-  const { addStudyRecord, updateStudyRecord, studyRecords } = useStudy();
+  // [2] Puxei 'algorithmSettings' para calcular a data de previsão
+  const { addStudyRecord, updateStudyRecord, studyRecords, algorithmSettings } = useStudy();
+  
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(''); // [3] Estado para mensagem dinâmica
   
   const [formData, setFormData] = useState({
     discipline: '',
@@ -81,6 +84,7 @@ export default function RegistrarEstudo() {
         topic: formData.topic,
         notes: formData.notes,
       });
+      setSuccessMessage("As alterações foram salvas com sucesso.");
     } else {
       addStudyRecord({
         discipline: formData.discipline,
@@ -90,6 +94,11 @@ export default function RegistrarEstudo() {
         topic: formData.topic,
         notes: formData.notes,
       });
+
+      // [4] Cálculo da data da revisão para mostrar ao usuário
+      const nextReviewDate = addDays(formData.date, algorithmSettings.firstInterval);
+      const formattedReviewDate = format(nextReviewDate, "dd/MM/yyyy");
+      setSuccessMessage(`Estudo registrado! 1ª Revisão agendada para: ${formattedReviewDate}`);
     }
     setShowSuccess(true);
   };
@@ -100,9 +109,7 @@ export default function RegistrarEstudo() {
   };
 
   return (
-    // [AQUI ESTÁ A MUDANÇA] Envolvemos tudo no MainLayout e passamos o título
     <MainLayout title={editId ? "Editar Estudo" : "Novo Registro"}>
-      
       <Card className="max-w-4xl animate-fade-in">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -174,6 +181,7 @@ export default function RegistrarEstudo() {
                       selected={formData.date}
                       onSelect={(date) => setFormData(prev => ({ ...prev, date }))}
                       locale={ptBR}
+                      disabled={(date) => date > new Date()} // [Opcional] Impede datas futuras se quiseres
                       className="pointer-events-auto"
                     />
                   </PopoverContent>
@@ -216,7 +224,7 @@ export default function RegistrarEstudo() {
         open={showSuccess} 
         onClose={handleCloseSuccess}
         title={editId ? "Estudo Atualizado!" : "Estudo Registrado!"}
-        message={editId ? "As alterações foram salvas com sucesso." : "Seu estudo foi registrado e as revisões foram agendadas."}
+        message={successMessage} // [5] Usando a mensagem dinâmica com a data
       />
     </MainLayout>
   );
