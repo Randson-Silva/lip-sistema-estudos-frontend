@@ -65,7 +65,7 @@ export function CalendarGrid({
               className={cn(
                 "group/col relative flex flex-col gap-2 rounded-lg border transition-all",
                 // Estilos Desktop
-                "md:min-h-[400px] md:border-l md:border-t-0 md:border-r-0 md:border-b-0 md:border-border/40 md:bg-muted/5 md:p-2 md:hover:bg-muted/10",
+                "md:min-h-[150px] md:border-l md:border-t-0 md:border-r-0 md:border-b-0 md:border-border/40 md:bg-transparent md:p-2",
                 // Estilos Mobile (Card Fechado)
                 "min-h-[120px] p-4 bg-card border-border shadow-sm md:shadow-none"
               )}
@@ -88,12 +88,13 @@ export function CalendarGrid({
               </div>
 
               <ScrollArea className="flex-1 md:-mr-2 md:pr-2">
-                <div className="space-y-2 pb-8 md:pb-8"> 
+                <div className="space-y-2 pb-14 md:pb-16"> 
                   {dayStudies.length > 0 ? (
                     dayStudies.map((study) => (
                       <StudyCard 
                         key={study.id}
                         study={study}
+                        onClick={() => onEditStudy(study)}
                       />
                     ))
                   ) : (
@@ -105,17 +106,17 @@ export function CalendarGrid({
                 </div>
               </ScrollArea>
 
-              <div className="mt-auto pt-2 md:absolute md:bottom-2 md:left-0 md:right-0 md:px-2 md:opacity-0 md:group-hover/col:opacity-100 transition-opacity duration-200">
+              <div className="mt-auto pt-2 md:absolute md:bottom-2 md:left-2 md:right-2 md:opacity-0 md:group-hover/col:opacity-100 transition-opacity duration-200 z-10">
                  <button
                   onClick={() => onAddStudy(day)}
                   className={cn(
-                    "w-full flex items-center justify-center gap-2 rounded-md border transition-all font-medium",
-                    "py-2 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                    "md:py-1.5 md:text-[10px] md:text-primary md:bg-primary/10 md:hover:bg-primary/20 md:border-primary/20"
+                    "w-full flex items-center justify-center gap-1.5 rounded-md border border-dashed border-muted-foreground/30 transition-all",
+                    "py-2 text-xs text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5",
+                    "md:py-1.5 bg-card/80 backdrop-blur-sm shadow-sm"
                   )}
                 >
-                  <Plus size={14} />
-                  <span>Adicionar novo estudo</span>
+                  <Plus size={12} />
+                  <span>Adicionar</span>
                 </button>
               </div>
             </div>

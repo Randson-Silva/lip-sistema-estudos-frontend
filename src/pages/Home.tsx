@@ -8,6 +8,7 @@ import { useStudy } from '@/contexts/StudyContext';
 import { StudyRecord } from '@/types/study';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -28,50 +29,30 @@ export default function Home() {
     navigate(`/registrar-estudo?date=${dateStr}`);
   };
 
+  // Handler simplificado (Placeholder para o Backend)
   const handleExport = () => {
-    window.print(); 
+    // Aqui entrará a chamada para sua API: api.get('/relatorios/pdf')
+    toast.info("Exportação de PDF", {
+      description: "Esta funcionalidade será processada pelo servidor em breve."
+    });
+    console.log("TODO: Implementar integração com endpoint de geração de PDF");
   };
 
   return (
     <MainLayout title="Tela Inicial">
-      {/* Estilos CSS para impressão */}
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #printable-cronograma, #printable-cronograma * {
-            visibility: visible;
-          }
-          #printable-cronograma {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 20px;
-            background: white;
-          }
-          /* Garante que o grid não corte conteúdo */
-          .overflow-x-auto {
-            overflow: visible !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
-
       <section className="space-y-4">
-        <div id="printable-cronograma" className="space-y-4">
+        
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">Cronograma Semanal</h2>
+              <h2 className="text-xl font-semibold text-foreground">
+                Cronograma Semanal
+              </h2>
               <span className="text-sm text-muted-foreground capitalize">
                 {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
               </span>
             </div>
             
-            <div className="border rounded-xl bg-card p-4 shadow-sm overflow-x-auto print:border-none print:shadow-none print:p-0">
+            <div className="border rounded-xl bg-card p-4 shadow-sm overflow-x-auto">
               <CalendarGrid
                 studies={studyRecords}
                 currentDate={currentDate}
@@ -83,7 +64,7 @@ export default function Home() {
             </div>
         </div>
 
-        <div className="flex justify-start pt-4 no-print">
+        <div className="flex justify-start pt-4">
           <Button 
             onClick={handleExport}
             className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all font-medium"
@@ -93,10 +74,8 @@ export default function Home() {
             Baixar Cronograma em PDF
           </Button>
         </div>
+
       </section>
     </MainLayout>
   );
 }
-
-
-

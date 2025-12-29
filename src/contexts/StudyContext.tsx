@@ -1,14 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { StudyRecord, Review, AlgorithmSettings, DEFAULT_ALGORITHM_SETTINGS } from '@/types/study';
+import { subDays, format } from 'date-fns'; 
 import * as Logic from '@/lib/study-logic';
-import { getTodayStr as getToday } from '@/lib/date-utils'; 
-import { MOCK_STUDIES, MOCK_REVIEWS } from '@/lib/mocks'; 
-
-// --- MOCK DATA ---
-// (Mantenha seus mocks aqui como estavam, ou mova para um arquivo separado mocks.ts para limpar ainda mais)
-// Para economizar espaço na resposta, vou assumir que você manteve o bloco "MOCK DATA" aqui.
-// ... [SEUS MOCKS AQUI] ...
-// --- FIM MOCK DATA ---
+import { getTodayStr } from '@/lib/date-utils'; 
+import { MOCK_STUDIES, MOCK_REVIEWS } from '@/lib/mocks';
+import { generateId } from '@/lib/utils';
 
 interface StudyContextType {
   studyRecords: StudyRecord[];
@@ -28,28 +24,53 @@ interface StudyContextType {
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
+const STORAGE_KEYS = {
+  STUDIES: 'study-manager:studies',
+  REVIEWS: 'study-manager:reviews',
+  SETTINGS: 'study-manager:settings',
+};
+
 export function StudyProvider({ children }: { children: ReactNode }) {
-  // Nota: Idealmente moveríamos MOCK_STUDIES para fora ou para um initial state
-  const [studyRecords, setStudyRecords] = useState<StudyRecord[]>(MOCK_STUDIES); 
-  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
-  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>(DEFAULT_ALGORITHM_SETTINGS);
+  const [studyRecords, setStudyRecords] = useState<StudyRecord[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.STUDIES);
+    return saved ? JSON.parse(saved) : MOCK_STUDIES;
+  });
+
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.REVIEWS);
+    return saved ? JSON.parse(saved) : MOCK_REVIEWS;
+  });
+
+  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    return saved ? JSON.parse(saved) : DEFAULT_ALGORITHM_SETTINGS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.STUDIES, JSON.stringify(studyRecords));
+  }, [studyRecords]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
+  }, [reviews]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(algorithmSettings));
+  }, [algorithmSettings]);
+
 
   const addStudyRecord = (recordData: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>): StudyRecord => {
-    // 1. Gera as datas de revisão usando a Lógica Pura
     const revisionsRef = Logic.createRevisionsForRecord(recordData.date, algorithmSettings);
 
-    // 2. Cria o objeto do estudo
     const newRecord: StudyRecord = {
       ...recordData,
-      id: crypto.randomUUID(),
+      id: generateId(),
       createdAt: new Date().toISOString(),
       revisions: revisionsRef,
     };
 
-    // 3. Gera os objetos de Review para o calendário/dashboard
     const newReviews = Logic.createReviewsFromRevisions(newRecord, revisionsRef);
 
-    // 4. Atualiza o estado
     setStudyRecords(prev => [...prev, newRecord]);
     setReviews(prev => [...prev, ...newReviews]);
     
@@ -61,7 +82,6 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       record.id === id ? { ...record, ...updatedData } : record
     ));
     
-    // Atualiza reviews associadas se mudar tópico/disciplina
     setReviews(prev => prev.map(review => {
       if (review.studyRecordId === id) {
         return {
@@ -82,7 +102,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
         return {
           ...review,
           completed: isCompleting,
-          completedAt: isCompleting ? getToday() : undefined,
+          completedAt: isCompleting ? getTodayStr() : undefined,
         };
       }
       return review;
@@ -91,18 +111,12 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
   const updateAlgorithmSettings = (settings: AlgorithmSettings) => setAlgorithmSettings(settings);
 
-  // --- Getters (Agora delegam para Logic) ---
-  
+  // --- Getters ---
   const getOverdueReviews = () => Logic.filterOverdueReviews(reviews);
-  
   const getTodayReviews = () => Logic.filterTodayReviews(reviews);
-  
-  const getCompletedReviews = () => reviews.filter(r => r.completed); // Simples o suficiente para ficar aqui ou mover
-  
+  const getCompletedReviews = () => reviews.filter(r => r.completed);
   const getPendingReviews = () => Logic.filterPendingReviews(reviews);
-  
   const getTotalHours = () => Logic.calculateTotalStudyHours(studyRecords);
-  
   const getReviewsCompleted = () => reviews.filter(r => r.completed).length;
 
   return (

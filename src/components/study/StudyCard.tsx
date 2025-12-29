@@ -1,40 +1,54 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CalendarDays } from "lucide-react";
 import { StudyRecord } from "@/types/study";
-import { format } from "date-fns";
-import { getDisciplineTheme } from "@/lib/constants"; // [1] Importe a constante
+import { getDisciplineTheme } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { Pencil } from "lucide-react";
 
 interface StudyCardProps {
   study: StudyRecord;
+  onClick?: () => void;
 }
 
-export function StudyCard({ study }: StudyCardProps) {
-  // [2] Recupere o tema em uma linha
+export function StudyCard({ study, onClick }: StudyCardProps) {
   const theme = getDisciplineTheme(study.disciplineColor);
 
   return (
-    <Card className={`hover:shadow-md transition-all border-l-4 ${theme.border}`}>
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <Badge className={`${theme.badge} border-0`}>
+    <div 
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer group relative flex flex-col gap-1.5 p-3 rounded-md border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md",
+        `border-l-[3px] ${theme.border}`
+      )}
+      role="button"
+      tabIndex={0}
+      title="Clique para editar"
+    >
+      <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+        
+        <div className="min-w-0">
+          <Badge 
+            variant="secondary" 
+            className={cn(
+
+              "px-2 py-0.5 text-[11px] font-bold tracking-wide truncate block w-fit max-w-full", 
+              theme.badge
+            )}
+            title={study.discipline}
+          >
             {study.discipline}
           </Badge>
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <CalendarDays className="w-3 h-3" />
-            {format(new Date(study.date), "dd/MM")}
-          </span>
         </div>
-        <CardTitle className="text-lg font-medium leading-tight mt-2">
-          {study.topic}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center text-sm text-muted-foreground gap-2">
-          <Clock className="w-4 h-4" />
-          <span>{study.timeSpent} horas</span>
-        </div>
-      </CardContent>
-    </Card>
+
+        {/* Ícone fixo na direita */}
+        <Pencil 
+          size={14} 
+          className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" 
+        />
+      </div>
+      
+      <h4 className="text-sm font-medium leading-tight line-clamp-2 text-foreground/90">
+        {study.topic}
+      </h4>
+    </div>
   );
 }
