@@ -1,6 +1,79 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { StudyRecord, Review, AlgorithmSettings, DEFAULT_ALGORITHM_SETTINGS } from '@/types/study';
-import { addDays, format, parseISO, differenceInDays, isToday, isBefore, startOfDay } from 'date-fns';
+import { addDays, format, parseISO, differenceInDays, isToday, isBefore, startOfDay, subDays } from 'date-fns';
+
+// --- MOCK DATA (DADOS INICIAIS PARA TESTE) ---
+
+const TODAY = new Date();
+const YESTERDAY = subDays(TODAY, 1);
+const TWO_DAYS_AGO = subDays(TODAY, 2);
+
+const MOCK_STUDIES: StudyRecord[] = [
+  {
+    id: '1',
+    discipline: 'Engenharia de Software',
+    disciplineColor: 'purple',
+    topic: 'Padrões de Projeto (MVC, Singleton)',
+    timeSpent: '02:00',
+    date: format(TODAY, 'yyyy-MM-dd'), 
+    createdAt: new Date().toISOString(),
+    revisions: [],
+    notes: 'Revisar implementação em Java'
+  },
+  {
+    id: '2',
+    discipline: 'Banco de Dados',
+    disciplineColor: 'blue',
+    topic: 'Normalização e Formas Normais',
+    timeSpent: '01:30',
+    date: format(TODAY, 'yyyy-MM-dd'), 
+    createdAt: new Date().toISOString(),
+    revisions: [],
+  },
+  {
+    id: '3',
+    discipline: 'Inteligência Artificial',
+    disciplineColor: 'navy',
+    topic: 'Redes Neurais - Perceptron',
+    timeSpent: '03:00',
+    date: format(YESTERDAY, 'yyyy-MM-dd'), 
+    createdAt: new Date().toISOString(),
+    revisions: [],
+  },
+  {
+    id: '4',
+    discipline: 'Estrutura de Dados',
+    disciplineColor: 'red',
+    topic: 'Árvores Binárias de Busca',
+    timeSpent: '01:00',
+    date: format(addDays(TODAY, 1), 'yyyy-MM-dd'),
+    createdAt: new Date().toISOString(),
+    revisions: [],
+  }
+];
+
+const MOCK_REVIEWS: Review[] = [
+  {
+    id: 'r1',
+    studyRecordId: '3',
+    discipline: 'Inteligência Artificial',
+    disciplineColor: 'navy',
+    topic: 'Redes Neurais - Perceptron',
+    dueDate: format(subDays(TODAY, 1), 'yyyy-MM-dd'), // Venceu ontem
+    completed: false,
+  },
+  {
+    id: 'r2',
+    studyRecordId: '2',
+    discipline: 'Banco de Dados',
+    disciplineColor: 'blue',
+    topic: 'Normalização e Formas Normais',
+    dueDate: format(TODAY, 'yyyy-MM-dd'), // Para hoje
+    completed: false,
+  }
+];
+
+// --- FIM DO MOCK DATA ---
 
 interface StudyContextType {
   studyRecords: StudyRecord[];
@@ -21,16 +94,14 @@ interface StudyContextType {
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
 export function StudyProvider({ children }: { children: ReactNode }) {
-  const [studyRecords, setStudyRecords] = useState<StudyRecord[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [studyRecords, setStudyRecords] = useState<StudyRecord[]>(MOCK_STUDIES);
+  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
+  
   const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>(DEFAULT_ALGORITHM_SETTINGS);
 
-  useEffect(() => {
-    
-  }, []);
-
-const addStudyRecord = (record: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>): StudyRecord => {
+  const addStudyRecord = (record: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>): StudyRecord => {
     const baseDate = new Date(record.date.replace(/-/g, '/'));
+    
     const revisions = [
       { date: format(addDays(baseDate, algorithmSettings.firstInterval), 'yyyy-MM-dd'), completed: false },
       { date: format(addDays(baseDate, algorithmSettings.secondInterval), 'yyyy-MM-dd'), completed: false },
@@ -97,16 +168,20 @@ const addStudyRecord = (record: Omit<StudyRecord, 'id' | 'createdAt' | 'revision
   const getOverdueReviews = () => {
     const today = startOfDay(new Date());
     return reviews
-      .filter(r => !r.completed && isBefore(new Date(r.dueDate.replace(/-/g, '/')), today)) 
+      .filter(r => !r.completed && isBefore(new Date(r.dueDate.replace(/-/g, '/')), today))
       .map(r => ({ ...r, daysOverdue: differenceInDays(today, new Date(r.dueDate.replace(/-/g, '/'))) }));
   };
 
   const getTodayReviews = () => {
-    return reviews.filter(r => !r.completed && isToday(new Date(r.dueDate.replace(/-/g, '/')))); 
+    return reviews.filter(r => !r.completed && isToday(new Date(r.dueDate.replace(/-/g, '/'))));
   };
+
   const getCompletedReviews = () => reviews.filter(r => r.completed);
 
-  const getTotalHours = () => 42;
+  const getTotalHours = () => {
+      return 42; 
+  };
+  
   const getReviewsCompleted = () => reviews.filter(r => r.completed).length;
   const getPendingReviews = () => reviews.filter(r => !r.completed).length;
 
