@@ -10,7 +10,7 @@ import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import Cadastro from "./pages/Cadastro";
 import Login from "./pages/Login";
-// import Home from "./pages/Home";
+import Home from "./pages/Home";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -26,7 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/home" element={<Home />} /> */}
+            <Route path="/home" element={<Home />} />
             <Route path="/registrar-estudo" element={<RegistrarEstudo />} /> {}
             {/* <Route path="/registrar" element={<RegistrarEstudo />} /> {} */}
             <Route path="/revisoes" element={<Revisoes />} />
