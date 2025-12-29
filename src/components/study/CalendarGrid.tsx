@@ -5,6 +5,7 @@ import { StudyCard } from './StudyCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { normalizeDate } from '@/lib/date-utils'; 
 
 interface CalendarGridProps {
   studies: StudyRecord[];
@@ -26,13 +27,14 @@ export function CalendarGrid({
 
   const getStudiesForDate = (date: Date) => {
     return studies.filter((study) => 
-      isSameDay(new Date(study.date.replace(/-/g, '/')), date)
+      isSameDay(normalizeDate(study.date), date)
     );
   };
 
   return (
     <div className="w-full">
       
+      {/* Cabeçalho Desktop */}
       <div className="hidden md:grid grid-cols-7 gap-4 mb-2">
         {weekDays.map((day) => (
           <div key={day.toString()} className="text-center space-y-2">
@@ -51,6 +53,7 @@ export function CalendarGrid({
         ))}
       </div>
 
+      {/* Grid de Dias */}
       <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         {weekDays.map((day) => {
           const dayStudies = getStudiesForDate(day);
@@ -68,6 +71,7 @@ export function CalendarGrid({
               )}
             >
               
+              {/* Cabeçalho Mobile */}
               <div className="md:hidden flex items-center justify-between mb-2 pb-2 border-b border-border/50">
                 <div className="flex items-center gap-2">
                   <div className={cn(
@@ -90,11 +94,9 @@ export function CalendarGrid({
                       <StudyCard 
                         key={study.id}
                         study={study}
-                        onClick={() => onEditStudy(study)}
                       />
                     ))
                   ) : (
-                    // Mensagem de "Vazio" apenas no Mobile para não ficar um buraco em branco
                     <div className="md:hidden text-center py-4 text-muted-foreground text-xs flex flex-col items-center gap-1 opacity-60">
                       <CalendarIcon size={16} />
                       <span>Nada registrado</span>
@@ -108,9 +110,7 @@ export function CalendarGrid({
                   onClick={() => onAddStudy(day)}
                   className={cn(
                     "w-full flex items-center justify-center gap-2 rounded-md border transition-all font-medium",
-                    // Mobile Styles
                     "py-2 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                    // Desktop Styles (Revertendo para o estilo clean)
                     "md:py-1.5 md:text-[10px] md:text-primary md:bg-primary/10 md:hover:bg-primary/20 md:border-primary/20"
                   )}
                 >

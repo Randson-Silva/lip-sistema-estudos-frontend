@@ -5,29 +5,16 @@ import { useStudy } from '@/contexts/StudyContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { truncateLabel } from '@/lib/utils'; 
-
-const COLOR_MAP: Record<string, string> = {
-  blue: 'hsl(var(--discipline-blue))',
-  purple: 'hsl(var(--discipline-purple))',
-  green: 'hsl(var(--discipline-green))',
-  red: 'hsl(var(--discipline-red))',
-  orange: 'hsl(var(--discipline-orange))',
-  navy: 'hsl(var(--discipline-navy))',
-  default: 'hsl(var(--primary))'
-};
-
-const timeToDecimal = (timeStr: string) => {
-  if (!timeStr) return 0;
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return hours + (minutes / 60);
-};
+import { truncateLabel } from '@/lib/utils';
+import { getDisciplineTheme } from '@/lib/constants'; // [1] Importação da UI centralizada
+import { timeToDecimal } from '@/lib/study-logic';   // [2] Importação da Lógica pura
 
 export default function Relatorios() {
   const { studyRecords, getTotalHours, getReviewsCompleted, getPendingReviews } = useStudy();
   const isMobile = useIsMobile(); 
 
   const chartData = useMemo(() => {
+    // Usamos um objeto auxiliar para somar as horas por disciplina
     const disciplineStats: Record<string, { name: string; hours: number; color: string }> = {};
 
     studyRecords.forEach((record) => {
@@ -37,20 +24,24 @@ export default function Relatorios() {
         disciplineStats[discipline] = {
           name: discipline,
           hours: 0,
-          color: COLOR_MAP[disciplineColor] || COLOR_MAP.default
+          // [3] Recupera a cor HEX correta da nossa constante
+          color: getDisciplineTheme(disciplineColor).hex
         };
       }
+      
+      // [4] Usa a função utilitária para converter "01:30" em 1.5
       disciplineStats[discipline].hours += timeToDecimal(timeSpent);
     });
 
+    // Transforma o objeto em array para o Recharts
     const data = Object.values(disciplineStats).map(stat => ({
       ...stat,
       hours: Number(stat.hours.toFixed(1))
     }));
 
+    // Ordena por quem tem mais horas estudadas
     return data.sort((a, b) => b.hours - a.hours);
   }, [studyRecords]);
-
 
   return (
     <MainLayout title="Relatórios e Estatísticas">

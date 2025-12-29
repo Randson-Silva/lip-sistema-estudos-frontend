@@ -1,54 +1,40 @@
-import { cn } from '@/lib/utils';
-import { StudyRecord } from '@/types/study';
-import { Pencil } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Clock, CalendarDays } from "lucide-react";
+import { StudyRecord } from "@/types/study";
+import { format } from "date-fns";
+import { getDisciplineTheme } from "@/lib/constants"; // [1] Importe a constante
 
 interface StudyCardProps {
   study: StudyRecord;
-  onClick?: () => void;
 }
 
-const colorClasses: Record<string, string> = {
-  purple: 'border-l-purple-500 data-[hover=true]:bg-purple-50 dark:data-[hover=true]:bg-purple-900/10',
-  blue: 'border-l-blue-500 data-[hover=true]:bg-blue-50 dark:data-[hover=true]:bg-blue-900/10',
-  green: 'border-l-green-500 data-[hover=true]:bg-green-50 dark:data-[hover=true]:bg-green-900/10',
-  red: 'border-l-red-500 data-[hover=true]:bg-red-50 dark:data-[hover=true]:bg-red-900/10',
-  orange: 'border-l-orange-500 data-[hover=true]:bg-orange-50 dark:data-[hover=true]:bg-orange-900/10',
-  navy: 'border-l-indigo-800 data-[hover=true]:bg-indigo-50 dark:data-[hover=true]:bg-indigo-900/10',
-};
-
-export function StudyCard({ study, onClick }: StudyCardProps) {
-  const colorClass = colorClasses[study.disciplineColor] || colorClasses.blue;
+export function StudyCard({ study }: StudyCardProps) {
+  // [2] Recupere o tema em uma linha
+  const theme = getDisciplineTheme(study.disciplineColor);
 
   return (
-    <div 
-      onClick={onClick}
-      className={cn(
-        "group relative bg-card rounded-md border border-border border-l-4 p-3 cursor-pointer shadow-sm transition-all hover:shadow-md hover:translate-x-1",
-        colorClass
-      )}
-      data-hover="true"
-    >
-      <div className="flex flex-col gap-1 pr-6">
-        {/* Disciplina */}
-        <div className="font-semibold text-xs text-foreground leading-tight truncate" title={study.discipline}>
-          {study.discipline}
+    <Card className={`hover:shadow-md transition-all border-l-4 ${theme.border}`}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <Badge className={`${theme.badge} border-0`}>
+            {study.discipline}
+          </Badge>
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <CalendarDays className="w-3 h-3" />
+            {format(new Date(study.date), "dd/MM")}
+          </span>
         </div>
-        
-        {/* Tópico */}
-        <div className="text-[10px] text-muted-foreground line-clamp-2 leading-snug">
+        <CardTitle className="text-lg font-medium leading-tight mt-2">
           {study.topic}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center text-sm text-muted-foreground gap-2">
+          <Clock className="w-4 h-4" />
+          <span>{study.timeSpent} horas</span>
         </div>
-      </div>
-
-      {/* Botão de Editar */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <button 
-          className="h-6 w-6 bg-background/80 hover:bg-primary hover:text-primary-foreground backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm border border-border transition-colors"
-          title="Editar estudo"
-        >
-          <Pencil size={12} />
-        </button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
