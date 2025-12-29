@@ -55,11 +55,11 @@ const Cadastro = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
   
               <div className="flex flex-col items-center justify-center">
-                <Logo className="text-primary h-16 md:h-24 w-auto" />
+                <Logo className="text-white h-16 md:h-24 w-auto" />
               </div>
 
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg animate-scale-in">
