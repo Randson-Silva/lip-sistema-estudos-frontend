@@ -1,41 +1,50 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Link, useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast"; // Vamos usar o toast ou o modal, você escolhe
+
+
+const formSchema = z.object({
+  nome: z.string().min(2, "O nome deve ter pelo menos 2 caracteres."),
+  email: z.string().email("Insira um e-mail válido."),
+  senha: z.string().min(6, "A senha deve ter no mínimo 6 caracteres."),
+  confirmaSenha: z.string(),
+}).refine((data) => data.senha === data.confirmaSenha, {
+  message: "As senhas não coincidem.",
+  path: ["confirmaSenha"], 
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const Cadastro = () => {
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confirmaSenha, setConfirmaSenha] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!nome || !email || !senha || !confirmaSenha) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive",
-      });
-      return;
-    }
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nome: "",
+      email: "",
+      senha: "",
+      confirmaSenha: "",
+    },
+  });
 
-    if (senha !== confirmaSenha) {
-      toast({
-        title: "Erro",
-        description: "As senhas não coincidem",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Mostra modal de sucesso
+  const onSubmit = (data: FormValues) => {
+    console.log("Dados validados:", data);
     setShowSuccess(true);
   };
 
@@ -46,107 +55,106 @@ const Cadastro = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center">
+        <div className="text-center animate-fade-in">
           <h1 className="text-4xl font-bold text-primary tracking-wide">ESTUDOS</h1>
         </div>
 
-        {/* Card de Cadastro */}
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+        <div className="bg-card border border-border rounded-2xl p-8 shadow-lg animate-scale-in">
           <h2 className="text-2xl font-semibold text-foreground text-center mb-8">
             CADASTRO
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="nome" className="text-muted-foreground text-sm">
-                nome
-              </Label>
-              <Input
-                id="nome"
-                type="text"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="bg-input border-border"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              
+              <FormField
+                control={form.control}
+                name="nome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>nome <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input placeholder="Seu nome completo" {...field} />
+                    </FormControl>
+                    <FormMessage /> 
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-muted-foreground text-sm">
-                email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-input border-border"
+              {/* Campo Email */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>email <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="seu@email.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="senha" className="text-muted-foreground text-sm">
-                senha
-              </Label>
-              <Input
-                id="senha"
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                className="bg-input border-border"
+              {/* Campo Senha */}
+              <FormField
+                control={form.control}
+                name="senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>senha <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmaSenha" className="text-muted-foreground text-sm">
-                confirme a senha
-              </Label>
-              <Input
-                id="confirmaSenha"
-                type="password"
-                value={confirmaSenha}
-                onChange={(e) => setConfirmaSenha(e.target.value)}
-                className="bg-input border-border"
+              {/* Campo Confirma Senha */}
+              <FormField
+                control={form.control}
+                name="confirmaSenha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>confirme a senha <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              CADASTRAR
-            </Button>
-          </form>
+              <Button type="submit" className="w-full mt-4" size="lg">
+                CADASTRAR
+              </Button>
+            </form>
+          </Form>
 
           <div className="text-center mt-6">
-            <Link to="/login" className="text-primary hover:underline text-sm">
+            <Link to="/login" className="text-primary hover:underline text-sm font-medium">
               já possuo conta
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Modal de Sucesso */}
+      {/* Modal de Sucesso (Mantido igual) */}
       {showSuccess && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-2xl p-8 max-w-sm mx-4 text-center shadow-xl">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-sm mx-4 text-center shadow-2xl animate-scale-in">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-foreground font-medium mb-6">
-              Conta cadastrada com sucesso!
+            <h3 className="text-xl font-semibold mb-2">Conta Criada!</h3>
+            <p className="text-muted-foreground mb-6">
+              Seu cadastro foi realizado com sucesso. Agora você pode fazer login.
             </p>
             <Button onClick={handleContinue} className="w-full">
-              Continuar para login
+              Continuar para Login
             </Button>
           </div>
         </div>
