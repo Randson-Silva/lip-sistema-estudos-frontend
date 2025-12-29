@@ -1,15 +1,15 @@
 import { NavLink } from 'react-router-dom';
-import { Calendar, BookOpen, RefreshCcw, BarChart3, Settings, LogOut, Plus } from 'lucide-react';
+import { Calendar, BookOpen, RefreshCcw, BarChart3, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useStudy } from '@/contexts/StudyContext'; 
+import { Logo } from '@/components/Logo'; 
 
 interface SidebarProps {
   userName?: string;
   className?: string; 
   onItemClick?: () => void; 
 }
-
 
 export function SidebarContent({ userName = 'Usuário', onItemClick }: SidebarProps) {
   const { getPendingReviews } = useStudy();
@@ -25,6 +25,7 @@ export function SidebarContent({ userName = 'Usuário', onItemClick }: SidebarPr
 
   return (
     <div className="flex flex-col h-full bg-card text-card-foreground">
+      {/* Cabeçalho do Perfil */}
       <div className="p-4 flex items-center gap-3 border-b border-border/50">
         <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
           <img 
@@ -83,21 +84,17 @@ export function SidebarContent({ userName = 'Usuário', onItemClick }: SidebarPr
         ))}
       </nav>
 
-      {/* Botão de Ação Rápida */}
-      <div className="p-4 border-t border-border/50">
-        <NavLink
-          to="/registrar-estudo"
-          onClick={onItemClick}
-          className="flex items-center gap-2 text-primary font-semibold text-lg hover:opacity-80 transition-opacity justify-center bg-primary/10 py-3 rounded-lg border border-primary/20"
-        >
-          <Plus size={20} className="text-primary" />
-          <span>NOVO ESTUDO</span>
-        </NavLink>
+{/* RODAPÉ: Centralização Absoluta */}
+      <div className="p-4 mt-auto border-t border-border/50 bg-muted/5">
+        <div className="w-full h-16 flex items-center justify-center">
+          <Logo className="text-primary h-14" /> 
+        </div>
       </div>
+    
+    
     </div>
   );
 }
-
 
 export function Sidebar({ className, userName }: SidebarProps) {
   return (

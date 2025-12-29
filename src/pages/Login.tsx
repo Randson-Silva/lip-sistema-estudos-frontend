@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/Logo";
 
 const loginSchema = z.object({
   email: z.string().email("Insira um e-mail válido."),
@@ -49,9 +50,10 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
-        <div className="text-center animate-fade-in">
-          <h1 className="text-4xl font-bold text-primary tracking-wide">ESTUDOS</h1>
-        </div>
+ 
+             <div className="flex flex-col items-center justify-center">
+               <Logo className="text-primary h-16 md:h-24 w-auto" />
+             </div>
 
         {/* Card de Login */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg animate-scale-in">

@@ -14,6 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Logo } from "@/components/Logo";
 // import { useToast } from "@/hooks/use-toast"; 
 
 
@@ -55,9 +56,10 @@ const Cadastro = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center animate-fade-in">
-          <h1 className="text-4xl font-bold text-primary tracking-wide">ESTUDOS</h1>
-        </div>
+  
+              <div className="flex flex-col items-center justify-center">
+                <Logo className="text-primary h-16 md:h-24 w-auto" />
+              </div>
 
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg animate-scale-in">
           <h2 className="text-2xl font-semibold text-foreground text-center mb-8">
