@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ReviewCard } from '@/components/reviews/ReviewCard';
 import { useStudy } from '@/contexts/StudyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CalendarDays } from 'lucide-react';
 
 export default function Revisoes() {
   const { 
@@ -16,9 +19,19 @@ export default function Revisoes() {
   const overdueReviews = getOverdueReviews();
   const todayReviews = getTodayReviews();
   const completedReviews = getCompletedReviews();
+  
+  const today = new Date();
 
   return (
     <MainLayout title="Minhas Revisões">
+      
+      <div className="flex items-center gap-2 text-muted-foreground mb-6 -mt-2">
+        <CalendarDays className="h-4 w-4" />
+        <span className="text-sm font-medium capitalize">
+          {format(today, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+        </span>
+      </div>
+
       <Tabs defaultValue="today" className="w-full space-y-6">
         <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
           <TabsTrigger value="overdue" className="data-[state=active]:text-red-600">
@@ -32,17 +45,20 @@ export default function Revisoes() {
           </TabsTrigger>
         </TabsList>
 
-        <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+        <ScrollArea className="h-[calc(100vh-240px)] pr-4">
           <TabsContent value="overdue" className="space-y-4 mt-0">
             {overdueReviews.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Nenhuma revisão atrasada! 🎉</p>
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <p>Nenhuma revisão atrasada! 🎉</p>
+                <p className="text-xs">Você está com o conteúdo em dia.</p>
+              </div>
             ) : (
               overdueReviews.map((review) => (
                 <ReviewCard 
                   key={review.id} 
                   review={review} 
-                  variant="overdue" // Passando variant correto
-                  onToggle={() => toggleReviewComplete(review.id)} // [CORREÇÃO] onToggle
+                  variant="overdue"
+                  onToggle={() => toggleReviewComplete(review.id)} 
                 />
               ))
             )}
@@ -50,14 +66,17 @@ export default function Revisoes() {
 
           <TabsContent value="today" className="space-y-4 mt-0">
             {todayReviews.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Tudo em dia por hoje.</p>
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <p>Tudo pronto por hoje.</p>
+                <p className="text-xs">Aproveite para descansar ou adiantar estudos.</p>
+              </div>
             ) : (
               todayReviews.map((review) => (
                 <ReviewCard 
                   key={review.id} 
                   review={review} 
-                  variant="today" // Passando variant correto
-                  onToggle={() => toggleReviewComplete(review.id)} // [CORREÇÃO] onToggle
+                  variant="today"
+                  onToggle={() => toggleReviewComplete(review.id)} 
                 />
               ))
             )}
@@ -65,14 +84,16 @@ export default function Revisoes() {
 
           <TabsContent value="completed" className="space-y-4 mt-0">
             {completedReviews.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Nenhuma revisão concluída ainda.</p>
+              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                <p>Nenhuma revisão concluída ainda.</p>
+              </div>
             ) : (
               completedReviews.map((review) => (
                 <ReviewCard 
                   key={review.id} 
                   review={review} 
-                  variant="completed" // Passando variant correto
-                  onToggle={() => toggleReviewComplete(review.id)} // [CORREÇÃO] onToggle
+                  variant="completed"
+                  onToggle={() => toggleReviewComplete(review.id)} 
                 />
               ))
             )}
