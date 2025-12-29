@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Logo } from "@/components/Logo";
+import { InputPassword } from "@/components/ui/input-password";
 // import { useToast } from "@/hooks/use-toast"; 
 
 
@@ -106,7 +107,7 @@ const Cadastro = () => {
                   <FormItem>
                     <FormLabel>senha <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <InputPassword placeholder="Crie uma senha" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -121,7 +122,7 @@ const Cadastro = () => {
                   <FormItem>
                     <FormLabel>confirme a senha <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <InputPassword placeholder="Repita a senha" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

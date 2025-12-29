@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/Logo";
+import { InputPassword } from "@/components/ui/input-password";
+
 
 const loginSchema = z.object({
   email: z.string().email("Insira um e-mail válido."),
@@ -92,11 +94,11 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>senha</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password" 
+                      <InputPassword 
+                        placeholder="insira sua senha" 
                         className="bg-input border-border" 
                         {...field} 
-                      />
+                              />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
