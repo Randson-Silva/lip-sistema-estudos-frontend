@@ -7,19 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { useStudy } from '@/contexts/StudyContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner";
 
 export default function Configuracoes() {
   const { algorithmSettings, updateAlgorithmSettings } = useStudy();
   const [settings, setSettings] = useState(algorithmSettings);
   const [notifications, setNotifications] = useState(true);
-  const { toast } = useToast();
 
   const handleSave = () => {
     updateAlgorithmSettings(settings);
-    toast({
-      title: "Sucesso",
-      description: "Configurações salvas com sucesso!",
+    toast.error("Erro no Login", {
+      description: "Credenciais inválidas. Tente novamente."
     });
   };
 

@@ -1,12 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { format, addDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
-
+import { useStudyForm } from '@/hooks/use-study-form';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,117 +9,37 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { SuccessModal } from '@/components/ui/success-modal';
-
+import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DISCIPLINES } from '@/types/study';
-import { useStudy } from '@/contexts/StudyContext';
-import { normalizeDate, formatDateForStorage } from '@/lib/date-utils'; 
-
-// 1. Schema de Validação
-const studySchema = z.object({
-  disciplineId: z.string({ required_error: "Selecione uma disciplina." }),
-  timeSpent: z.string().min(1, "Informe o tempo de estudo."),
-  date: z.date({ required_error: "A data é obrigatória." }),
-  topic: z.string().min(3, "O tema deve ter pelo menos 3 caracteres."),
-  notes: z.string().optional(),
-});
-
-type StudyFormValues = z.infer<typeof studySchema>;
+import { useNavigate } from 'react-router-dom';
 
 export default function RegistrarEstudo() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const editId = searchParams.get('edit');
-  const dateParam = searchParams.get('date');
-
-  const { addStudyRecord, updateStudyRecord, studyRecords, algorithmSettings } = useStudy();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-
-  // 2. Inicialização do Form
-  const form = useForm<StudyFormValues>({
-    resolver: zodResolver(studySchema),
-    defaultValues: {
-      disciplineId: '',
-      timeSpent: '01:00',
-      topic: '',
-      notes: '',
-      // Se não houver dataParam, deixa undefined para forçar o usuário a escolher ou usa data atual se preferir
-      date: dateParam ? normalizeDate(dateParam) : new Date(), 
-    },
-  });
-
-  // 3. Carregar dados para Edição
-  useEffect(() => {
-    if (editId) {
-      const studyToEdit = studyRecords.find(s => s.id === editId);
-      if (studyToEdit) {
-        // Encontra o ID da disciplina baseado no nome salvo
-        const disciplineObj = DISCIPLINES.find(d => d.name === studyToEdit.discipline);
-        
-        form.reset({
-          disciplineId: disciplineObj?.id || '', 
-          timeSpent: studyToEdit.timeSpent,
-          date: normalizeDate(studyToEdit.date),
-          topic: studyToEdit.topic,
-          notes: studyToEdit.notes || '',
-        });
-      }
-    }
-  }, [editId, studyRecords, form]);
-
-  const onSubmit = (data: StudyFormValues) => {
-    // Busca os metadados da disciplina (Nome e Cor) baseado no ID selecionado
-    const selectedDiscipline = DISCIPLINES.find(d => d.id === data.disciplineId);
-    
-    if (!selectedDiscipline) return; // Should not happen due to validation
-
-    const formattedDate = formatDateForStorage(data.date);
-
-    if (editId) {
-      updateStudyRecord(editId, {
-        discipline: selectedDiscipline.name,
-        disciplineColor: selectedDiscipline.color,
-        timeSpent: data.timeSpent,
-        date: formattedDate,
-        topic: data.topic,
-        notes: data.notes,
-      });
-      setSuccessMessage("Registro atualizado com sucesso!");
-    } else {
-      addStudyRecord({
-        discipline: selectedDiscipline.name,
-        disciplineColor: selectedDiscipline.color,
-        timeSpent: data.timeSpent,
-        date: formattedDate,
-        topic: data.topic,
-        notes: data.notes,
-      });
-
-      // Feedback de Próxima Revisão
-      const nextReviewDate = addDays(data.date, algorithmSettings.firstInterval);
-      setSuccessMessage(`Estudo registrado! 1ª Revisão: ${format(nextReviewDate, "dd/MM/yyyy")}`);
-    }
-    
-    setShowSuccess(true);
-  };
-
-  const handleCloseSuccess = () => {
-    setShowSuccess(false);
-    navigate('/home');
-  };
+  const { 
+    form, 
+    onSubmit, 
+    showSuccess, 
+    successMessage, 
+    handleCloseSuccess,
+    isEditing 
+  } = useStudyForm();
 
   return (
-    <MainLayout title={editId ? "Editar Estudo" : "Novo Registro"}>
+    <MainLayout title={isEditing ? "Editar Estudo" : "Novo Registro"}>
       <Card className="max-w-4xl animate-fade-in">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-xl">{editId ? "Editar Detalhes" : "Detalhes do Estudo"}</CardTitle>
+            <CardTitle className="text-xl">
+              {isEditing ? "Editar Detalhes" : "Detalhes do Estudo"}
+            </CardTitle>
             <CardDescription>
-              {editId ? "Altere as informações abaixo." : "Preencha os dados para gerar as revisões."}
+              {isEditing ? "Altere as informações abaixo." : "Preencha os dados para gerar as revisões."}
             </CardDescription>
           </div>
-          {editId && (
+          {isEditing && (
             <Button variant="ghost" onClick={() => navigate('/home')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Cancelar
             </Button>
@@ -146,7 +58,7 @@ export default function RegistrarEstudo() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Disciplina</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-12">
                             <SelectValue placeholder="Selecione..." />
@@ -262,7 +174,7 @@ export default function RegistrarEstudo() {
 
               <div className="flex justify-end pt-4">
                 <Button type="submit" size="lg" className="px-8 min-w-[200px]">
-                  {editId ? "ATUALIZAR REGISTRO" : "SALVAR ESTUDO"}
+                  {isEditing ? "ATUALIZAR REGISTRO" : "SALVAR ESTUDO"}
                 </Button>
               </div>
 
@@ -274,7 +186,7 @@ export default function RegistrarEstudo() {
       <SuccessModal 
         open={showSuccess} 
         onClose={handleCloseSuccess}
-        title={editId ? "Sucesso!" : "Estudo Agendado!"}
+        title={isEditing ? "Sucesso!" : "Estudo Agendado!"}
         message={successMessage}
       />
     </MainLayout>

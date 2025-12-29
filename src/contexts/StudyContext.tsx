@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { StudyRecord, Review, AlgorithmSettings, DEFAULT_ALGORITHM_SETTINGS } from '@/types/study';
-import { subDays, format } from 'date-fns'; 
 import * as Logic from '@/lib/study-logic';
 import { getTodayStr } from '@/lib/date-utils'; 
 import { MOCK_STUDIES, MOCK_REVIEWS } from '@/lib/mocks';
@@ -10,6 +9,8 @@ interface StudyContextType {
   studyRecords: StudyRecord[];
   reviews: Review[];
   algorithmSettings: AlgorithmSettings;
+  overdueCount: number; 
+  todayReviews: Review[]; 
   addStudyRecord: (record: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>) => StudyRecord;
   updateStudyRecord: (id: string, record: Partial<StudyRecord>) => void;
   toggleReviewComplete: (reviewId: string) => void;
@@ -46,6 +47,17 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     return saved ? JSON.parse(saved) : DEFAULT_ALGORITHM_SETTINGS;
   });
 
+  const [overdueCount, setOverdueCount] = useState(0);
+  const [todayReviewsList, setTodayReviewsList] = useState<Review[]>([]);
+
+  useEffect(() => {
+    const overdue = Logic.filterOverdueReviews(reviews);
+    const today = Logic.filterTodayReviews(reviews);
+    setOverdueCount(overdue.length);
+    setTodayReviewsList(today);
+  }, [reviews]);
+
+  // Persistência
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.STUDIES, JSON.stringify(studyRecords));
   }, [studyRecords]);
@@ -60,62 +72,50 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
 
   const addStudyRecord = (recordData: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>): StudyRecord => {
-    const revisionsRef = Logic.createRevisionsForRecord(recordData.date, algorithmSettings);
+  // prepara apenas os dados do formulário
+  const newEntryRequest = { ...recordData };
 
-    const newRecord: StudyRecord = {
-      ...recordData,
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      revisions: revisionsRef,
-    };
+  // Simulação apenas
+  const serverSideId = generateId(); // O servidor geraria o UUID
+  const serverSideTimestamp = new Date().toISOString(); // O servidor define a hora oficial
+  
+  // O algoritmo de agendamento também é processado aqui 
+  const revisoesRef = Logic.createRevisionsForRecord(recordData.date, algorithmSettings);
 
-    const newReviews = Logic.createReviewsFromRevisions(newRecord, revisionsRef);
-
-    setStudyRecords(prev => [...prev, newRecord]);
-    setReviews(prev => [...prev, ...newReviews]);
-    
-    return newRecord;
+  const savedRecord: StudyRecord = {
+    ...newEntryRequest,
+    id: serverSideId,
+    createdAt: serverSideTimestamp,
+    revisions: revisoesRef,
   };
 
- const updateStudyRecord = (id: string, updatedData: Partial<StudyRecord>) => {
-  setStudyRecords(prev => prev.map(record => {
-    if (record.id === id) {
-      const newRecord = { ...record, ...updatedData };
-      
-      // [LOGICA NOVA] Se a data mudou, precisamos regenerar as revisões
-      if (updatedData.date && updatedData.date !== record.date) {
-        const newRevisions = Logic.createRevisionsForRecord(updatedData.date, algorithmSettings);
-        newRecord.revisions = newRevisions;
-
-        // Atualiza a lista global de reviews (objetos de interface)
-        setReviews(prevReviews => {
-          // Remove as reviews antigas deste estudo
-          const otherReviews = prevReviews.filter(r => r.studyRecordId !== id);
-          // Cria as novas baseadas na nova data
-          const freshReviews = Logic.createReviewsFromRevisions(newRecord, newRevisions);
-          return [...otherReviews, ...freshReviews];
-        });
-      }
-      
-      return newRecord;
-    }
-    return record;
-  }));
-
-  if (!updatedData.date) {
-    setReviews(prev => prev.map(review => {
-      if (review.studyRecordId === id) {
-        return {
-          ...review,
-          topic: updatedData.topic || review.topic,
-          discipline: updatedData.discipline || review.discipline,
-          disciplineColor: updatedData.disciplineColor || review.disciplineColor
-        };
-      }
-      return review;
-    }));
-  }
+  // O estado do Front-end apenas armazena o que o "servidor" confirmou
+  const newReviews = Logic.createReviewsFromRevisions(savedRecord, revisoesRef);
+  
+  setStudyRecords(prev => [...prev, savedRecord]);
+  setReviews(prev => [...prev, ...newReviews]);
+  
+  return savedRecord;
 };
+
+  const updateStudyRecord = (id: string, updatedData: Partial<StudyRecord>) => {
+    setStudyRecords(prev => prev.map(record => {
+      if (record.id === id) {
+        const newRecord = { ...record, ...updatedData };
+        if (updatedData.date && updatedData.date !== record.date) {
+          const newRevisions = Logic.createRevisionsForRecord(updatedData.date, algorithmSettings);
+          newRecord.revisions = newRevisions;
+          setReviews(prevReviews => {
+            const otherReviews = prevReviews.filter(r => r.studyRecordId !== id);
+            const freshReviews = Logic.createReviewsFromRevisions(newRecord, newRevisions);
+            return [...otherReviews, ...freshReviews];
+          });
+        }
+        return newRecord;
+      }
+      return record;
+    }));
+  };
 
   const toggleReviewComplete = (reviewId: string) => {
     setReviews(prev => prev.map(review => {
@@ -135,7 +135,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
   // --- Getters ---
   const getOverdueReviews = () => Logic.filterOverdueReviews(reviews);
-  const getTodayReviews = () => Logic.filterTodayReviews(reviews);
+  const getTodayReviews = () => todayReviewsList;
   const getCompletedReviews = () => reviews.filter(r => r.completed);
   const getPendingReviews = () => Logic.filterPendingReviews(reviews);
   const getTotalHours = () => Logic.calculateTotalStudyHours(studyRecords);
@@ -146,6 +146,8 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       studyRecords,
       reviews,
       algorithmSettings,
+      overdueCount,
+      todayReviews: todayReviewsList,
       addStudyRecord,
       updateStudyRecord,
       toggleReviewComplete,

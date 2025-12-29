@@ -13,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { InputPassword } from "@/components/ui/input-password";
 
@@ -27,7 +27,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,11 +39,9 @@ const Login = () => {
   const onSubmit = (data: LoginFormValues) => {
     console.log("Dados de Login:", data);
 
-    toast({
-      title: "Bem-vindo de volta!",
-      description: "Login realizado com sucesso.",
+    toast.error("Erro no Login", {
+      description: "Credenciais inválidas. Tente novamente."
     });
-
     navigate("/home");
   };
 

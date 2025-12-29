@@ -1,5 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-// Remova o Sonner duplicado se for padronizar no 'toaster' do shadcn
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom"; // REMOVA 'BrowserRouter' daqui
