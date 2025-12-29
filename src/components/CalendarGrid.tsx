@@ -1,13 +1,13 @@
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { StudyRecord } from '@/types/study';
-import { Card, CardContent } from '@/components/ui/card';
+import { StudyCard } from '@/components/StudyCard'; 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react';
 
 interface CalendarGridProps {
-  studies: StudyRecord[]; 
+  studies: StudyRecord[];
   currentDate: Date;
   onDateSelect: (date: Date) => void;
   onEditStudy: (study: StudyRecord) => void;
@@ -31,17 +31,18 @@ export function CalendarGrid({
   };
 
   return (
-    <div className="grid grid-cols-7 gap-4 min-w-[800px]">
+    <div className="grid grid-cols-7 gap-4 min-w-[1000px] lg:min-w-full">
+      {/* Cabeçalho dos Dias */}
       {weekDays.map((day) => (
-        <div key={day.toString()} className="text-center space-y-2">
-          <div className="font-medium text-muted-foreground capitalize">
+        <div key={day.toString()} className="text-center space-y-2 mb-2">
+          <div className="font-medium text-muted-foreground capitalize text-sm">
             {format(day, 'EEE', { locale: ptBR })}
           </div>
           <div className={cn(
-            "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold",
+            "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-colors",
             isSameDay(day, new Date()) 
-              ? "bg-primary text-primary-foreground" 
-              : "text-foreground"
+              ? "bg-primary text-primary-foreground shadow-sm" 
+              : "text-foreground bg-secondary/50"
           )}>
             {format(day, 'd')}
           </div>
@@ -53,37 +54,32 @@ export function CalendarGrid({
         const dayStudies = getStudiesForDate(day);
         
         return (
-          <div key={day.toString()} className="h-[500px] border-l first:border-l-0 border-border/50 bg-muted/5 rounded-lg p-2 flex flex-col gap-2 group hover:bg-muted/10 transition-colors">
-            
-            <ScrollArea className="flex-1">
-              <div className="space-y-2 pr-2">
+          <div 
+            key={day.toString()} 
+            className="min-h-[400px] border-l first:border-l-0 border-border/40 bg-muted/5 rounded-lg p-2 flex flex-col gap-2 group/col hover:bg-muted/10 transition-colors relative"
+          >
+            <ScrollArea className="flex-1 -mr-2 pr-2">
+              <div className="space-y-2 pb-8"> {/* Padding bottom para espaço do botão */}
                 {dayStudies.map((study) => (
-                  <Card 
-                    key={study.id} 
-                    className="cursor-pointer hover:border-primary transition-colors shadow-sm"
+                  <StudyCard 
+                    key={study.id}
+                    study={study}
                     onClick={() => onEditStudy(study)}
-                    style={{ borderLeftColor: study.disciplineColor, borderLeftWidth: '4px' }}
-                  >
-                    <CardContent className="p-3 space-y-1">
-                      <div className="font-semibold text-xs truncate" title={study.discipline}>
-                        {study.discipline} {}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground truncate">
-                        {study.topic}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  />
                 ))}
               </div>
             </ScrollArea>
 
-            <button
-              onClick={() => onAddStudy(day)}
-              className="w-full py-2 flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all opacity-0 group-hover:opacity-100"
-              title="Adicionar estudo neste dia"
-            >
-              <Plus size={16} />
-            </button>
+            {/* Botão de Adicionar (Overlay invisível que aparece no hover da coluna) */}
+            <div className="absolute bottom-2 left-0 right-0 px-2 opacity-0 group-hover/col:opacity-100 transition-opacity duration-200">
+               <button
+                onClick={() => onAddStudy(day)}
+                className="w-full py-1.5 flex items-center justify-center gap-2 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md border border-primary/20 transition-all"
+              >
+                <Plus size={14} />
+                Adicionar
+              </button>
+            </div>
           </div>
         );
       })}
