@@ -5,76 +5,90 @@ import { useStudy } from '@/contexts/StudyContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { truncateLabel } from '@/lib/utils';
-import { getDisciplineTheme } from '@/lib/constants'; // [1] Importação da UI centralizada
-import { timeToDecimal } from '@/lib/study-logic';   // [2] Importação da Lógica pura
+import { truncateLabel, getDiscipline } from '@/lib/utils'; // [1] Importamos o helper de Lookup
+import { getDisciplineTheme } from '@/lib/constants';
+import { timeToDecimal } from '@/lib/study-logic';
 
 export default function Relatorios() {
-  const { studyRecords, getTotalHours, getReviewsCompleted, getPendingReviews } = useStudy();
+  // Consumindo os valores memoizados do Contexto
+  const { 
+    studyRecords, 
+    totalHours, 
+    reviewsCompletedCount, 
+    pendingReviewsCount 
+  } = useStudy();
+  
   const isMobile = useIsMobile(); 
 
   const chartData = useMemo(() => {
-    // Usamos um objeto auxiliar para somar as horas por disciplina
-    const disciplineStats: Record<string, { name: string; hours: number; color: string }> = {};
+    if (studyRecords.length === 0) return [];
 
-    studyRecords.forEach((record) => {
-      const { discipline, disciplineColor, timeSpent } = record;
+    // [2] Reduce agora usa o ID como chave, não o nome
+    const statsMap = studyRecords.reduce((acc, record) => {
+      const { disciplineId, timeSpent } = record;
 
-      if (!disciplineStats[discipline]) {
-        disciplineStats[discipline] = {
-          name: discipline,
+      // Recupera os dados frescos (Nome e Cor) usando o ID
+      const disciplineInfo = getDiscipline(disciplineId);
+
+      // Usamos o ID como chave para garantir unicidade
+      if (!acc[disciplineInfo.id]) {
+        acc[disciplineInfo.id] = {
+          name: disciplineInfo.name, 
           hours: 0,
-          // [3] Recupera a cor HEX correta da nossa constante
-          color: getDisciplineTheme(disciplineColor).hex
+          color: getDisciplineTheme(disciplineInfo.color).hex
         };
       }
       
-      // [4] Usa a função utilitária para converter "01:30" em 1.5
-      disciplineStats[discipline].hours += timeToDecimal(timeSpent);
-    });
+      acc[disciplineInfo.id].hours += timeToDecimal(timeSpent);
+      
+      return acc;
+    }, {} as Record<string, { name: string; hours: number; color: string }>);
 
-    // Transforma o objeto em array para o Recharts
-    const data = Object.values(disciplineStats).map(stat => ({
-      ...stat,
-      hours: Number(stat.hours.toFixed(1))
-    }));
+    return Object.values(statsMap)
+      .map(stat => ({
+        ...stat,
+        hours: Number(stat.hours.toFixed(1))
+      }))
+      .sort((a, b) => b.hours - a.hours);
 
-    // Ordena por quem tem mais horas estudadas
-    return data.sort((a, b) => b.hours - a.hours);
-  }, [studyRecords]);
+  }, [studyRecords]); 
 
   return (
     <MainLayout title="Relatórios e Estatísticas">
       <div className="grid gap-4 grid-cols-1 md:grid-cols-3 mb-8">
+        
+        {/* Card 1: Total de Horas */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Horas</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getTotalHours().toFixed(1)}h</div>
+            <div className="text-2xl font-bold">{totalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">Tempo acumulado de estudo</p>
           </CardContent>
         </Card>
 
+        {/* Card 2: Revisões Feitas */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revisões Feitas</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getReviewsCompleted()}</div>
+            <div className="text-2xl font-bold">{reviewsCompletedCount}</div>
             <p className="text-xs text-muted-foreground">Ciclos concluídos</p>
           </CardContent>
         </Card>
 
+        {/* Card 3: Revisões Pendentes */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Revisões Pendentes</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getPendingReviews()}</div>
+            <div className="text-2xl font-bold">{pendingReviewsCount}</div>
             <p className="text-xs text-muted-foreground">Precisa de atenção</p>
           </CardContent>
         </Card>

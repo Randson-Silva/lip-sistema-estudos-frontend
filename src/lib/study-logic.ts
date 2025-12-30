@@ -31,14 +31,14 @@ export const createReviewsFromRevisions = (
   return revisions.map((rev) => ({
     id: crypto.randomUUID(),
     studyRecordId: studyRecord.id,
-    discipline: studyRecord.discipline,
-    disciplineColor: studyRecord.disciplineColor,
+    
+    disciplineId: studyRecord.disciplineId,
+    
     topic: studyRecord.topic,
     dueDate: rev.date,
     completed: false,
   }));
 };
-
 
 export const filterOverdueReviews = (reviews: Review[]): Review[] => {
   const todayStr = getTodayStr();

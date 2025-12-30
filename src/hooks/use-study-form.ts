@@ -45,9 +45,9 @@ export function useStudyForm() {
     if (editId) {
       const studyToEdit = studyRecords.find(s => s.id === editId);
       if (studyToEdit) {
-        const disciplineObj = DISCIPLINES.find(d => d.name === studyToEdit.discipline);
+        // CORREÇÃO 1: Usamos o ID direto. Não precisa mais buscar na lista pelo nome.
         form.reset({
-          disciplineId: disciplineObj?.id || '',
+          disciplineId: studyToEdit.disciplineId, 
           timeSpent: studyToEdit.timeSpent,
           date: normalizeDate(studyToEdit.date),
           topic: studyToEdit.topic,
@@ -58,13 +58,15 @@ export function useStudyForm() {
   }, [editId, studyRecords, form]);
 
   const onSubmit = (data: StudyFormValues) => {
+    // Validação básica para garantir que o ID existe (opcional, mas boa prática)
     const selectedDiscipline = DISCIPLINES.find(d => d.id === data.disciplineId);
     if (!selectedDiscipline) return;
 
     const formattedDate = formatDateForStorage(data.date);
+    
+    // CORREÇÃO 2: Salvamos o ID em vez do Nome/Cor
     const commonData = {
-      discipline: selectedDiscipline.name,
-      disciplineColor: selectedDiscipline.color,
+      disciplineId: data.disciplineId, // Normalizado!
       timeSpent: data.timeSpent,
       date: formattedDate,
       topic: data.topic,

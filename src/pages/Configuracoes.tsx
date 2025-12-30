@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout'; // [PADRONIZAÇÃO]
+import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowRight, Calendar } from 'lucide-react';
+import { ArrowRight, Calendar, Trash2 } from 'lucide-react';
 import { useStudy } from '@/contexts/StudyContext';
 import { toast } from "sonner";
 
@@ -16,14 +16,15 @@ export default function Configuracoes() {
 
   const handleSave = () => {
     updateAlgorithmSettings(settings);
-    toast.error("Erro no Login", {
-      description: "Credenciais inválidas. Tente novamente."
+    // [CORREÇÃO] Mensagem de sucesso correta
+    toast.success("Configurações salvas!", {
+      description: "O algoritmo de revisão foi atualizado."
     });
   };
 
   return (
     <MainLayout title="Configurações">
-      <div className="max-w-4xl space-y-6 animate-fade-in">
+      <div className="max-w-4xl space-y-6 animate-fade-in pb-10">
         {/* Card do Algoritmo */}
         <Card>
              <CardHeader>
@@ -115,6 +116,31 @@ export default function Configuracoes() {
                </div>
                <Button variant="outline">Conectar</Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* --- NOVA ÁREA: ZONA DE PERIGO (DEV TOOLS) --- */}
+        <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
+          <CardHeader>
+            <CardTitle className="text-lg text-red-600 flex items-center gap-2">
+               <Trash2 size={20} /> Zona de Perigo (Dev Only)
+            </CardTitle>
+            <CardDescription>
+              Utilize estas opções caso encontre inconsistências ou bugs nos dados salvos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if(confirm("Tem certeza? Isso apagará TODOS os seus estudos e revisões locais.")) {
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+            >
+              Resetar Todos os Dados (Factory Reset)
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { StudyRecord } from "@/types/study";
 import { getDisciplineTheme } from "@/lib/constants";
+import { getDiscipline } from "@/lib/utils"; // Importamos o helper
 import { cn } from "@/lib/utils";
 import { Pencil } from "lucide-react";
 
@@ -10,7 +11,11 @@ interface StudyCardProps {
 }
 
 export function StudyCard({ study, onClick }: StudyCardProps) {
-  const theme = getDisciplineTheme(study.disciplineColor);
+  // 1. CORREÇÃO: Buscamos os dados completos (nome, cor) usando o ID
+  const discipline = getDiscipline(study.disciplineId);
+  
+  // 2. CORREÇÃO: Usamos a cor retornada pelo helper
+  const theme = getDisciplineTheme(discipline.color);
 
   return (
     <div 
@@ -24,22 +29,19 @@ export function StudyCard({ study, onClick }: StudyCardProps) {
       title="Clique para editar"
     >
       <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        
         <div className="min-w-0">
           <Badge 
             variant="secondary" 
             className={cn(
-
               "px-2 py-0.5 text-[11px] font-bold tracking-wide truncate block w-fit max-w-full", 
               theme.badge
             )}
-            title={study.discipline}
+            title={discipline.name} // CORREÇÃO: Usamos discipline.name
           >
-            {study.discipline}
+            {discipline.name} 
           </Badge>
         </div>
 
-        {/* Ícone fixo na direita */}
         <Pencil 
           size={14} 
           className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" 

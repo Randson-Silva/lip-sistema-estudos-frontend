@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { StudyRecord, Review, AlgorithmSettings, DEFAULT_ALGORITHM_SETTINGS } from '@/types/study';
 import * as Logic from '@/lib/study-logic';
 import { getTodayStr } from '@/lib/date-utils'; 
@@ -11,10 +11,18 @@ interface StudyContextType {
   algorithmSettings: AlgorithmSettings;
   overdueCount: number; 
   todayReviews: Review[]; 
+  
+  // Novos campos memoizados (Dados prontos)
+  totalHours: number;
+  reviewsCompletedCount: number;
+  pendingReviewsCount: number;
+
   addStudyRecord: (record: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>) => StudyRecord;
   updateStudyRecord: (id: string, record: Partial<StudyRecord>) => void;
   toggleReviewComplete: (reviewId: string) => void;
   updateAlgorithmSettings: (settings: AlgorithmSettings) => void;
+  
+  // Getters
   getOverdueReviews: () => Review[];
   getTodayReviews: () => Review[];
   getCompletedReviews: () => Review[];
@@ -31,21 +39,43 @@ const STORAGE_KEYS = {
   SETTINGS: 'study-manager:settings',
 };
 
+// --- FUNÇÃO DE SEGURANÇA (NOVA) ---
+const safeLoad = <T,>(key: string, fallback: T): T => {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    
+    const parsed = JSON.parse(saved);
+    
+    // Validação específica para Estudos: Se existir dados mas sem o campo novo 'disciplineId',
+    // considera inválido (formato antigo) e força o fallback para evitar crash.
+    if (key === STORAGE_KEYS.STUDIES && Array.isArray(parsed) && parsed.length > 0) {
+      if (!parsed[0].disciplineId) {
+        console.warn(`[Migration] Dados antigos detectados em ${key}. Resetando para evitar conflito.`);
+        return fallback; 
+      }
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error(`[Storage] Erro ao carregar ${key}, usando fallback.`, error);
+    return fallback;
+  }
+};
+
 export function StudyProvider({ children }: { children: ReactNode }) {
-  const [studyRecords, setStudyRecords] = useState<StudyRecord[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.STUDIES);
-    return saved ? JSON.parse(saved) : MOCK_STUDIES;
-  });
+  // Inicialização segura usando safeLoad
+  const [studyRecords, setStudyRecords] = useState<StudyRecord[]>(() => 
+    safeLoad(STORAGE_KEYS.STUDIES, MOCK_STUDIES)
+  );
 
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.REVIEWS);
-    return saved ? JSON.parse(saved) : MOCK_REVIEWS;
-  });
+  const [reviews, setReviews] = useState<Review[]>(() => 
+    safeLoad(STORAGE_KEYS.REVIEWS, MOCK_REVIEWS)
+  );
 
-  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return saved ? JSON.parse(saved) : DEFAULT_ALGORITHM_SETTINGS;
-  });
+  const [algorithmSettings, setAlgorithmSettings] = useState<AlgorithmSettings>(() => 
+    safeLoad(STORAGE_KEYS.SETTINGS, DEFAULT_ALGORITHM_SETTINGS)
+  );
 
   const [overdueCount, setOverdueCount] = useState(0);
   const [todayReviewsList, setTodayReviewsList] = useState<Review[]>([]);
@@ -56,6 +86,22 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     setOverdueCount(overdue.length);
     setTodayReviewsList(today);
   }, [reviews]);
+
+  // --- OTIMIZAÇÃO DE PERFORMANCE (MEMOIZAÇÃO) ---
+  const totalHours = useMemo(() => 
+    Logic.calculateTotalStudyHours(studyRecords), 
+    [studyRecords]
+  );
+
+  const reviewsCompletedCount = useMemo(() => 
+    reviews.filter(r => r.completed).length, 
+    [reviews]
+  );
+
+  const pendingReviewsCount = useMemo(() => 
+    Logic.filterPendingReviews(reviews), 
+    [reviews]
+  );
 
   // Persistência
   useEffect(() => {
@@ -72,36 +118,32 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
 
   const addStudyRecord = (recordData: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>): StudyRecord => {
-  // prepara apenas os dados do formulário
-  const newEntryRequest = { ...recordData };
+    const newEntryRequest = { ...recordData };
+    const serverSideId = generateId(); 
+    const serverSideTimestamp = new Date().toISOString(); 
+    const revisoesRef = Logic.createRevisionsForRecord(recordData.date, algorithmSettings);
 
-  // Simulação apenas
-  const serverSideId = generateId(); // O servidor geraria o UUID
-  const serverSideTimestamp = new Date().toISOString(); // O servidor define a hora oficial
-  
-  // O algoritmo de agendamento também é processado aqui 
-  const revisoesRef = Logic.createRevisionsForRecord(recordData.date, algorithmSettings);
+    const savedRecord: StudyRecord = {
+      ...newEntryRequest,
+      id: serverSideId,
+      createdAt: serverSideTimestamp,
+      revisions: revisoesRef,
+    };
 
-  const savedRecord: StudyRecord = {
-    ...newEntryRequest,
-    id: serverSideId,
-    createdAt: serverSideTimestamp,
-    revisions: revisoesRef,
+    const newReviews = Logic.createReviewsFromRevisions(savedRecord, revisoesRef);
+    
+    setStudyRecords(prev => [...prev, savedRecord]);
+    setReviews(prev => [...prev, ...newReviews]);
+    
+    return savedRecord;
   };
-
-  // O estado do Front-end apenas armazena o que o "servidor" confirmou
-  const newReviews = Logic.createReviewsFromRevisions(savedRecord, revisoesRef);
-  
-  setStudyRecords(prev => [...prev, savedRecord]);
-  setReviews(prev => [...prev, ...newReviews]);
-  
-  return savedRecord;
-};
 
   const updateStudyRecord = (id: string, updatedData: Partial<StudyRecord>) => {
     setStudyRecords(prev => prev.map(record => {
       if (record.id === id) {
-        const newRecord = { ...record, ...updatedData };
+        const { id: _ignoredId, createdAt: _ignoredCreated, ...rest } = updatedData;
+        const newRecord = { ...record, ...rest };
+
         if (updatedData.date && updatedData.date !== record.date) {
           const newRevisions = Logic.createRevisionsForRecord(updatedData.date, algorithmSettings);
           newRecord.revisions = newRevisions;
@@ -137,9 +179,6 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const getOverdueReviews = () => Logic.filterOverdueReviews(reviews);
   const getTodayReviews = () => todayReviewsList;
   const getCompletedReviews = () => reviews.filter(r => r.completed);
-  const getPendingReviews = () => Logic.filterPendingReviews(reviews);
-  const getTotalHours = () => Logic.calculateTotalStudyHours(studyRecords);
-  const getReviewsCompleted = () => reviews.filter(r => r.completed).length;
 
   return (
     <StudyContext.Provider value={{
@@ -148,16 +187,21 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       algorithmSettings,
       overdueCount,
       todayReviews: todayReviewsList,
+      totalHours,
+      reviewsCompletedCount,
+      pendingReviewsCount,
+      
       addStudyRecord,
       updateStudyRecord,
       toggleReviewComplete,
       updateAlgorithmSettings,
+      
       getOverdueReviews,
       getTodayReviews,
       getCompletedReviews,
-      getTotalHours,
-      getReviewsCompleted,
-      getPendingReviews,
+      getTotalHours: () => totalHours,
+      getReviewsCompleted: () => reviewsCompletedCount,
+      getPendingReviews: () => pendingReviewsCount,
     }}>
       {children}
     </StudyContext.Provider>

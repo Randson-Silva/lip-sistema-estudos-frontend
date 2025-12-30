@@ -1,14 +1,4 @@
-export interface StudyRecord {
-  id: string;
-  discipline: string;
-  disciplineColor: DisciplineColor;
-  timeSpent: string;
-  date: string;
-  topic: string;
-  notes?: string;
-  createdAt: string;
-  revisions: RevisionDate[];
-}
+
 
 export interface RevisionDate {
   date: string;
@@ -19,8 +9,7 @@ export interface RevisionDate {
 export interface Review {
   id: string;
   studyRecordId: string;
-  discipline: string;
-  disciplineColor: DisciplineColor;
+  disciplineId: string; 
   topic: string;
   dueDate: string;
   completed: boolean;
@@ -28,14 +17,22 @@ export interface Review {
   daysOverdue?: number;
 }
 
-export type DisciplineColor = 'blue' | 'purple' | 'green' | 'red' | 'orange' | 'navy';
-
 export interface Discipline {
   id: string;
   name: string;
-  color: DisciplineColor;
+  color: string; 
 }
 
+export interface StudyRecord {
+  id: string;
+  disciplineId: string;
+  timeSpent: string;
+  date: string;
+  topic: string;
+  notes?: string;
+  createdAt: string;
+  revisions: { date: string; completed: boolean }[];
+}
 export const DISCIPLINES: Discipline[] = [
   { id: '1', name: 'Engenharia de Software', color: 'purple' },
   { id: '2', name: 'Banco de Dados', color: 'blue' },
