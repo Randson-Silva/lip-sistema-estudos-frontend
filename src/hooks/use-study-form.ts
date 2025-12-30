@@ -72,14 +72,13 @@ export function useStudyForm() {
       topic: data.topic,
       notes: data.notes,
     };
-
+    
     if (editId) {
       updateStudyRecord(editId, commonData);
       setSuccessMessage("Registro atualizado com sucesso!");
     } else {
       addStudyRecord(commonData);
-      const nextReviewDate = addDays(data.date, algorithmSettings.firstInterval);
-      setSuccessMessage(`Estudo registrado! 1ª Revisão: ${format(nextReviewDate, "dd/MM/yyyy")}`);
+      setSuccessMessage("Estudo registrado no histórico!");
     }
     
     setShowSuccess(true);

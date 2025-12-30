@@ -1,7 +1,7 @@
 import { StudyRecord, Review, AlgorithmSettings } from '@/types/study';
-import { addDaysToDate, getTodayStr, getDaysDiffFromToday } from './date-utils';
+import { getTodayStr, normalizeDate } from './date-utils';
 
-
+// Mantemos auxiliares de cálculo simples (apenas leitura)
 export const timeToDecimal = (timeStr: string): number => {
   if (!timeStr) return 0;
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -12,42 +12,30 @@ export const calculateTotalStudyHours = (records: StudyRecord[]): number => {
   return records.reduce((total, record) => total + timeToDecimal(record.timeSpent), 0);
 };
 
+// --- Para não quebrar o código que as chama) ---
 
 export const createRevisionsForRecord = (
   recordDate: string, 
   settings: AlgorithmSettings
 ) => {
-  return [
-    { date: addDaysToDate(recordDate, settings.firstInterval), completed: false },
-    { date: addDaysToDate(recordDate, settings.secondInterval), completed: false },
-    { date: addDaysToDate(recordDate, settings.thirdInterval), completed: false },
-  ];
+  // RETORNO VAZIO: O algoritmo foi desligado.
+  return [];
 };
 
 export const createReviewsFromRevisions = (
   studyRecord: StudyRecord, 
   revisions: { date: string, completed: boolean }[]
 ): Review[] => {
-  return revisions.map((rev) => ({
-    id: crypto.randomUUID(),
-    studyRecordId: studyRecord.id,
-    
-    disciplineId: studyRecord.disciplineId,
-    
-    topic: studyRecord.topic,
-    dueDate: rev.date,
-    completed: false,
-  }));
+  // RETORNO VAZIO: Sem revisões futuras automáticas.
+  return [];
 };
+
+// --- FILTROS DE VISUALIZAÇÃO (Apenas comparações simples) ---
 
 export const filterOverdueReviews = (reviews: Review[]): Review[] => {
   const todayStr = getTodayStr();
-  return reviews
-    .filter(r => !r.completed && r.dueDate < todayStr)
-    .map(r => ({
-      ...r,
-      daysOverdue: getDaysDiffFromToday(r.dueDate)
-    }));
+  // Apenas filtra quem tem data menor que hoje. 
+  return reviews.filter(r => !r.completed && r.dueDate < todayStr);
 };
 
 export const filterTodayReviews = (reviews: Review[]): Review[] => {

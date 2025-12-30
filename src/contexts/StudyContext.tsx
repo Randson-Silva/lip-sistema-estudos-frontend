@@ -11,8 +11,6 @@ interface StudyContextType {
   algorithmSettings: AlgorithmSettings;
   overdueCount: number; 
   todayReviews: Review[]; 
-  
-  // Novos campos memoizados
   totalHours: number;
   reviewsCompletedCount: number;
   pendingReviewsCount: number;
@@ -22,7 +20,6 @@ interface StudyContextType {
   toggleReviewComplete: (reviewId: string) => void;
   updateAlgorithmSettings: (settings: AlgorithmSettings) => void;
   
-  // Getters
   getOverdueReviews: () => Review[];
   getTodayReviews: () => Review[];
   getCompletedReviews: () => Review[];
@@ -39,32 +36,16 @@ const STORAGE_KEYS = {
   SETTINGS: 'study-manager:settings',
 };
 
-// --- FUNÇÃO DE SEGURANÇA (ATUALIZADA) ---
 const safeLoad = <T,>(key: string, fallback: T): T => {
   try {
     const saved = localStorage.getItem(key);
-    if (!saved) return fallback;
-    
-    const parsed = JSON.parse(saved);
-    
-    // [CORREÇÃO] Agora verificamos tanto ESTUDOS quanto REVISÕES
-    // Se for uma lista e o primeiro item não tiver 'disciplineId', é dado legado (lixo).
-    if ((key === STORAGE_KEYS.STUDIES || key === STORAGE_KEYS.REVIEWS) && Array.isArray(parsed) && parsed.length > 0) {
-      if (!parsed[0].disciplineId) {
-        console.warn(`[Migration] Dados antigos detectados em ${key}. Resetando para evitar 'Desconhecido'.`);
-        return fallback; 
-      }
-    }
-
-    return parsed;
+    return saved ? JSON.parse(saved) : fallback;
   } catch (error) {
-    console.error(`[Storage] Erro ao carregar ${key}, usando fallback.`, error);
     return fallback;
   }
 };
 
 export function StudyProvider({ children }: { children: ReactNode }) {
-  // Inicialização segura
   const [studyRecords, setStudyRecords] = useState<StudyRecord[]>(() => 
     safeLoad(STORAGE_KEYS.STUDIES, MOCK_STUDIES)
   );
@@ -77,63 +58,26 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     safeLoad(STORAGE_KEYS.SETTINGS, DEFAULT_ALGORITHM_SETTINGS)
   );
 
-  const [overdueCount, setOverdueCount] = useState(0);
-  const [todayReviewsList, setTodayReviewsList] = useState<Review[]>([]);
-
-  useEffect(() => {
-    const overdue = Logic.filterOverdueReviews(reviews);
-    const today = Logic.filterTodayReviews(reviews);
-    setOverdueCount(overdue.length);
-    setTodayReviewsList(today);
-  }, [reviews]);
-
-  // --- OTIMIZAÇÃO (MEMOIZAÇÃO) ---
-  const totalHours = useMemo(() => 
-    Logic.calculateTotalStudyHours(studyRecords), 
-    [studyRecords]
-  );
-
-  const reviewsCompletedCount = useMemo(() => 
-    reviews.filter(r => r.completed).length, 
-    [reviews]
-  );
-
-  const pendingReviewsCount = useMemo(() => 
-    Logic.filterPendingReviews(reviews), 
-    [reviews]
-  );
-
   // Persistência
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.STUDIES, JSON.stringify(studyRecords));
-  }, [studyRecords]);
+  useEffect(() => localStorage.setItem(STORAGE_KEYS.STUDIES, JSON.stringify(studyRecords)), [studyRecords]);
+  useEffect(() => localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews)), [reviews]);
+  useEffect(() => localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(algorithmSettings)), [algorithmSettings]);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
-  }, [reviews]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(algorithmSettings));
-  }, [algorithmSettings]);
-
+  // --- ACTIONS SIMPLIFICADAS ---
 
   const addStudyRecord = (recordData: Omit<StudyRecord, 'id' | 'createdAt' | 'revisions'>): StudyRecord => {
-    const newEntryRequest = { ...recordData };
-    const serverSideId = generateId(); 
-    const serverSideTimestamp = new Date().toISOString(); 
-    const revisoesRef = Logic.createRevisionsForRecord(recordData.date, algorithmSettings);
-
+    // 1. Cria o registro simples
     const savedRecord: StudyRecord = {
-      ...newEntryRequest,
-      id: serverSideId,
-      createdAt: serverSideTimestamp,
-      revisions: revisoesRef,
+      ...recordData,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      revisions: [], // Sem revisões futuras
     };
 
-    const newReviews = Logic.createReviewsFromRevisions(savedRecord, revisoesRef);
-    
+    // 2. Salva apenas o estudo. NÃO gera reviews.
     setStudyRecords(prev => [...prev, savedRecord]);
-    setReviews(prev => [...prev, ...newReviews]);
+    
+    // (Opcional) Se quiser criar UMA review manual aqui, poderia, mas o pedido foi "Registro Simples".
     
     return savedRecord;
   };
@@ -141,19 +85,8 @@ export function StudyProvider({ children }: { children: ReactNode }) {
   const updateStudyRecord = (id: string, updatedData: Partial<StudyRecord>) => {
     setStudyRecords(prev => prev.map(record => {
       if (record.id === id) {
-        const { id: _ignoredId, createdAt: _ignoredCreated, ...rest } = updatedData;
-        const newRecord = { ...record, ...rest };
-
-        if (updatedData.date && updatedData.date !== record.date) {
-          const newRevisions = Logic.createRevisionsForRecord(updatedData.date, algorithmSettings);
-          newRecord.revisions = newRevisions;
-          setReviews(prevReviews => {
-            const otherReviews = prevReviews.filter(r => r.studyRecordId !== id);
-            const freshReviews = Logic.createReviewsFromRevisions(newRecord, newRevisions);
-            return [...otherReviews, ...freshReviews];
-          });
-        }
-        return newRecord;
+        // Apenas merge simples, sem recálculo de datas
+        return { ...record, ...updatedData };
       }
       return record;
     }));
@@ -175,10 +108,18 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
   const updateAlgorithmSettings = (settings: AlgorithmSettings) => setAlgorithmSettings(settings);
 
-  // --- Getters ---
+  // --- GETTERS (Mantêm a interface, mas usam lógica simplificada) ---
+  
   const getOverdueReviews = () => Logic.filterOverdueReviews(reviews);
-  const getTodayReviews = () => todayReviewsList;
+  const getTodayReviews = () => Logic.filterTodayReviews(reviews);
   const getCompletedReviews = () => reviews.filter(r => r.completed);
+
+  // Memoizações
+  const totalHours = useMemo(() => Logic.calculateTotalStudyHours(studyRecords), [studyRecords]);
+  const reviewsCompletedCount = useMemo(() => reviews.filter(r => r.completed).length, [reviews]);
+  const pendingReviewsCount = useMemo(() => Logic.filterPendingReviews(reviews), [reviews]);
+  const overdueCount = useMemo(() => Logic.filterOverdueReviews(reviews).length, [reviews]);
+  const todayReviewsList = useMemo(() => Logic.filterTodayReviews(reviews), [reviews]);
 
   return (
     <StudyContext.Provider value={{
@@ -210,8 +151,6 @@ export function StudyProvider({ children }: { children: ReactNode }) {
 
 export function useStudy() {
   const context = useContext(StudyContext);
-  if (context === undefined) {
-    throw new Error('useStudy must be used within a StudyProvider');
-  }
+  if (context === undefined) throw new Error('useStudy must be used within a StudyProvider');
   return context;
 }

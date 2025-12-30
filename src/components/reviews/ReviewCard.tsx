@@ -1,8 +1,10 @@
 import { Check } from 'lucide-react';
 import { Review } from '@/types/study';
-import { cn, getDiscipline } from '@/lib/utils'; // [1] Helper de Lookup
+import { cn, getDiscipline } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { getDisciplineTheme } from '@/lib/constants';
+import { differenceInCalendarDays } from 'date-fns'; // Importação necessária
+import { normalizeDate } from '@/lib/date-utils';   // Importação necessária
 
 interface ReviewCardProps {
   review: Review;
@@ -11,14 +13,16 @@ interface ReviewCardProps {
 }
 
 export function ReviewCard({ review, variant, onToggle }: ReviewCardProps) {
-  // [2] NORMALIZAÇÃO: Buscamos o objeto completo (Nome/Cor) usando o ID
   const discipline = getDiscipline(review.disciplineId);
-  
-  // [3] Recupera o tema usando a cor encontrada na constante
   const theme = getDisciplineTheme(discipline.color);
 
+  // LÓGICA VISUAL: Calculamos o atraso aqui, na hora do render
+  const daysOverdue = variant === 'overdue' 
+    ? differenceInCalendarDays(new Date(), normalizeDate(review.dueDate))
+    : 0;
+
   const getOverdueLabel = (days: number) => {
-    if (days === 1) return 'Atrasado: Ontem';
+    if (days <= 1) return 'Atrasado: Ontem';
     return `Atrasado: ${days} dias`;
   };
 
@@ -31,7 +35,6 @@ export function ReviewCard({ review, variant, onToggle }: ReviewCardProps) {
         variant === 'today' && "bg-card hover:bg-accent/50 border-border/50 shadow-sm"
       )}
     >
-      {/* Color Bar - Usa o HEX vindo do tema da disciplina */}
       <div 
         className={cn(
           "w-1.5 h-12 rounded-full flex-shrink-0",
@@ -40,7 +43,6 @@ export function ReviewCard({ review, variant, onToggle }: ReviewCardProps) {
         style={variant !== 'completed' ? { backgroundColor: theme.hex } : undefined}
       />
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <span 
           className={cn(
@@ -57,7 +59,7 @@ export function ReviewCard({ review, variant, onToggle }: ReviewCardProps) {
               : undefined
           }
         >
-          {discipline.name} {/* CORREÇÃO: Usa o nome recuperado pelo ID */}
+          {discipline.name}
         </span>
         <p 
           className={cn(
@@ -69,17 +71,16 @@ export function ReviewCard({ review, variant, onToggle }: ReviewCardProps) {
         </p>
       </div>
 
-      {/* Overdue Badge */}
-      {variant === 'overdue' && review.daysOverdue && (
+      {/* Badge usa a variável local 'daysOverdue' calculada acima */}
+      {variant === 'overdue' && daysOverdue > 0 && (
         <Badge 
           variant="outline" 
           className="hidden md:inline-flex border-destructive/40 text-destructive bg-destructive/10 whitespace-nowrap"
         >
-          {getOverdueLabel(review.daysOverdue)}
+          {getOverdueLabel(daysOverdue)}
         </Badge>
       )}
 
-      {/* Checkbox */}
       <button
         onClick={onToggle}
         className={cn(
@@ -88,7 +89,6 @@ export function ReviewCard({ review, variant, onToggle }: ReviewCardProps) {
             ? "border-primary bg-primary text-primary-foreground"
             : "border-muted-foreground/20 hover:border-primary hover:bg-primary/5"
         )}
-        aria-label={variant === 'completed' ? "Marcar como pendente" : "Concluir revisão"}
       >
         {variant === 'completed' && <Check size={16} strokeWidth={3} />}
       </button>
