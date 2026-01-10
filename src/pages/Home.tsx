@@ -12,8 +12,8 @@ import { toast } from 'sonner';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { studyRecords } = useStudy(); 
-  const [currentDate] = useState(new Date()); 
+  const { studyRecords } = useStudy();
+  const [currentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const handleDateSelect = (date: Date) => {
@@ -29,43 +29,40 @@ export default function Home() {
     navigate(`/registrar-estudo?date=${dateStr}`);
   };
 
-  // Handler simplificado (Placeholder para o Backend)
   const handleExport = () => {
-    // Aqui entrará a chamada para sua API: api.get('/relatorios/pdf')
     toast.info("Exportação de PDF", {
       description: "Esta funcionalidade será processada pelo servidor em breve."
     });
-    console.log("TODO: Implementar integração com endpoint de geração de PDF");
   };
 
   return (
     <MainLayout title="Tela Inicial">
       <section className="space-y-4">
-        
+
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">
-                Cronograma Semanal
-              </h2>
-              <span className="text-sm text-muted-foreground capitalize">
-                {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
-              </span>
-            </div>
-            
-            <div className="border rounded-xl bg-card p-4 shadow-sm overflow-x-auto">
-              <CalendarGrid
-                studies={studyRecords}
-                currentDate={currentDate}
-                selectedDate={selectedDate}
-                onDateSelect={handleDateSelect}
-                onEditStudy={handleEditStudy}
-                onAddStudy={handleAddStudy}
-              />
-            </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">
+              Cronograma Semanal
+            </h2>
+            <span className="text-sm text-muted-foreground capitalize">
+              {format(currentDate, "MMMM 'de' yyyy", { locale: ptBR })}
+            </span>
+          </div>
+
+          <div className="border rounded-xl bg-card p-4 shadow-sm overflow-x-auto">
+            <CalendarGrid
+              studies={studyRecords}
+              currentDate={currentDate}
+              selectedDate={selectedDate}
+              onDateSelect={handleDateSelect}
+              onEditStudy={handleEditStudy}
+              onAddStudy={handleAddStudy}
+            />
+          </div>
         </div>
 
         <div className="flex justify-start pt-4">
-          <Button 
+          <Button
             onClick={handleExport}
             className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all font-medium"
             size="lg"

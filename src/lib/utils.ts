@@ -21,7 +21,6 @@ export function truncateLabel(label: string, isMobile: boolean, totalItems: numb
 
 export const getDiscipline = (id: string): Discipline => {
   const found = DISCIPLINES.find(d => d.id === id);
-  // [CORREÇÃO] 'gray' não existe no type DisciplineColor. Usando 'blue' como fallback seguro.
   return found || { id: 'unknown', name: 'Desconhecido', color: 'blue' };
 };
 

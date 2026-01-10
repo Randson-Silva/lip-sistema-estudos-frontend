@@ -1,18 +1,59 @@
-// src/lib/constants.ts
+export type DisciplineColor = 'blue' | 'purple' | 'green' | 'red' | 'orange' | 'navy' | 'gray';
 
-// Definição das cores e estilos visuais
-export const THEMES = {
-  purple: { hex: '#9333ea', bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-500', badge: 'bg-purple-100 text-purple-700 hover:bg-purple-200' },
-  blue: { hex: '#2563eb', bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-500', badge: 'bg-blue-100 text-blue-700 hover:bg-blue-200' },
-  navy: { hex: '#1e3a8a', bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-800', badge: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200' },
-  green: { hex: '#16a34a', bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-500', badge: 'bg-green-100 text-green-700 hover:bg-green-200' },
-  red: { hex: '#dc2626', bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-500', badge: 'bg-red-100 text-red-700 hover:bg-red-200' },
-  orange: { hex: '#ea580c', bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-500', badge: 'bg-orange-100 text-orange-700 hover:bg-orange-200' },
-  gray: { hex: '#6b7280', bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-500', badge: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+export interface DisciplineTheme {
+  hex: string;
+  border: string;
+  badge: string;
+  bg: string;
+}
+
+export const DISCIPLINE_THEME: Record<DisciplineColor, DisciplineTheme> = {
+  purple: {
+    hex: '#8B5CF6',
+    border: 'border-purple-500',
+    badge: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+    bg: 'bg-purple-500/10',
+  },
+  blue: {
+    hex: '#3B82F6',
+    border: 'border-blue-500',
+    badge: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+    bg: 'bg-blue-500/10',
+  },
+  navy: {
+    hex: '#1E3A8A',
+    border: 'border-indigo-800',
+    badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+    bg: 'bg-indigo-500/10',
+  },
+  green: {
+    hex: '#22C55E',
+    border: 'border-green-500',
+    badge: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    bg: 'bg-green-500/10',
+  },
+  red: {
+    hex: '#EF4444',
+    border: 'border-red-500',
+    badge: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+    bg: 'bg-red-500/10',
+  },
+  orange: {
+    hex: '#F97316',
+    border: 'border-orange-500',
+    badge: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+    bg: 'bg-orange-500/10',
+  },
+  gray: {
+    hex: '#6B7280',
+    border: 'border-gray-500',
+    badge: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
+    bg: 'bg-gray-500/10',
+  },
 };
 
-// Helper seguro: se a cor não existir, retorna cinza
-export function getDisciplineTheme(colorName: string) {
-  // @ts-ignore: Ignora erro de indexação dinâmica para manter simples
-  return THEMES[colorName] || THEMES.gray;
+// Helper para recuperar estilos com fallback seguro
+export function getDisciplineTheme(color?: string): DisciplineTheme {
+  const theme = DISCIPLINE_THEME[color as DisciplineColor];
+  return theme || DISCIPLINE_THEME.gray;
 }

@@ -13,19 +13,21 @@ import { Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { DISCIPLINES } from '@/types/study';
+import { useDisciplines } from '@/contexts/DisciplineContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function RegistrarEstudo() {
   const navigate = useNavigate();
-  const { 
-    form, 
-    onSubmit, 
-    showSuccess, 
-    successMessage, 
+  const {
+    form,
+    onSubmit,
+    showSuccess,
+    successMessage,
     handleCloseSuccess,
-    isEditing 
+    isEditing
   } = useStudyForm();
+
+  const { disciplines } = useDisciplines();
 
   return (
     <MainLayout title={isEditing ? "Editar Estudo" : "Novo Registro"}>
@@ -48,9 +50,9 @@ export default function RegistrarEstudo() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+
                 {/* DISCIPLINA */}
                 <FormField
                   control={form.control}
@@ -65,7 +67,7 @@ export default function RegistrarEstudo() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {DISCIPLINES.map((d) => (
+                          {disciplines.map((d) => (
                             <SelectItem key={d.id} value={d.id}>
                               {d.name}
                             </SelectItem>
@@ -161,10 +163,10 @@ export default function RegistrarEstudo() {
                   <FormItem>
                     <FormLabel>Observações (Opcionais)</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Dificuldades encontradas, links úteis..." 
-                        className="min-h-[120px] resize-none" 
-                        {...field} 
+                      <Textarea
+                        placeholder="Dificuldades encontradas, links úteis..."
+                        className="min-h-[120px] resize-none"
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -183,8 +185,8 @@ export default function RegistrarEstudo() {
         </CardContent>
       </Card>
 
-      <SuccessModal 
-        open={showSuccess} 
+      <SuccessModal
+        open={showSuccess}
         onClose={handleCloseSuccess}
         title={isEditing ? "Sucesso!" : "Estudo Agendado!"}
         message={successMessage}

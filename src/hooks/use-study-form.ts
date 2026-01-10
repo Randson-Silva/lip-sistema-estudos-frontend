@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { addDays, format } from 'date-fns';
 import { useStudy } from '@/contexts/StudyContext';
-import { DISCIPLINES } from '@/types/study';
+import { useDisciplines } from '@/contexts/DisciplineContext';
 import { normalizeDate, formatDateForStorage } from '@/lib/date-utils';
 
 const studySchema = z.object({
@@ -25,7 +25,8 @@ export function useStudyForm() {
   const dateParam = searchParams.get('date');
 
   const { addStudyRecord, updateStudyRecord, studyRecords, algorithmSettings } = useStudy();
-  
+  const { disciplines } = useDisciplines();
+
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -40,14 +41,13 @@ export function useStudyForm() {
     },
   });
 
-  // Lógica de Edição isolada
+
   useEffect(() => {
     if (editId) {
       const studyToEdit = studyRecords.find(s => s.id === editId);
       if (studyToEdit) {
-        // CORREÇÃO 1: Usamos o ID direto. Não precisa mais buscar na lista pelo nome.
         form.reset({
-          disciplineId: studyToEdit.disciplineId, 
+          disciplineId: studyToEdit.disciplineId,
           timeSpent: studyToEdit.timeSpent,
           date: normalizeDate(studyToEdit.date),
           topic: studyToEdit.topic,
@@ -58,21 +58,19 @@ export function useStudyForm() {
   }, [editId, studyRecords, form]);
 
   const onSubmit = (data: StudyFormValues) => {
-    // Validação básica para garantir que o ID existe (opcional, mas boa prática)
-    const selectedDiscipline = DISCIPLINES.find(d => d.id === data.disciplineId);
+    const selectedDiscipline = disciplines.find(d => d.id === data.disciplineId);
     if (!selectedDiscipline) return;
 
     const formattedDate = formatDateForStorage(data.date);
-    
-    // CORREÇÃO 2: Salvamos o ID em vez do Nome/Cor
+
     const commonData = {
-      disciplineId: data.disciplineId, // Normalizado!
+      disciplineId: data.disciplineId,
       timeSpent: data.timeSpent,
       date: formattedDate,
       topic: data.topic,
       notes: data.notes,
     };
-    
+
     if (editId) {
       updateStudyRecord(editId, commonData);
       setSuccessMessage("Registro atualizado com sucesso!");
@@ -80,7 +78,7 @@ export function useStudyForm() {
       addStudyRecord(commonData);
       setSuccessMessage("Estudo registrado no histórico!");
     }
-    
+
     setShowSuccess(true);
   };
 
