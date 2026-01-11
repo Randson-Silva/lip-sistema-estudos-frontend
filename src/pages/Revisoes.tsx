@@ -1,30 +1,35 @@
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { ReviewCard } from '@/components/reviews/ReviewCard';
-import { useStudy } from '@/contexts/StudyContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { CalendarDays } from 'lucide-react';
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { ReviewCard } from "@/components/reviews/ReviewCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CalendarDays, Loader2 } from "lucide-react";
+import { useReviews } from "@/hooks/use-reviews";
 
 export default function Revisoes() {
-  const { 
-    getOverdueReviews, 
-    getTodayReviews, 
-    getCompletedReviews, 
-    toggleReviewComplete 
-  } = useStudy();
+  const {
+    overdueReviews,
+    todayReviews,
+    completedReviews,
+    toggleReview,
+    isLoading,
+  } = useReviews();
 
-  const overdueReviews = getOverdueReviews();
-  const todayReviews = getTodayReviews();
-  const completedReviews = getCompletedReviews();
-  
   const today = new Date();
+
+  if (isLoading) {
+    return (
+      <MainLayout title="Minhas Revisões">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout title="Minhas Revisões">
-      
       <div className="flex items-center gap-2 text-muted-foreground mb-6 -mt-2">
         <CalendarDays className="h-4 w-4" />
         <span className="text-sm font-medium capitalize">
@@ -34,15 +39,14 @@ export default function Revisoes() {
 
       <Tabs defaultValue="today" className="w-full space-y-6">
         <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
-          <TabsTrigger value="overdue" className="data-[state=active]:text-red-600">
+          <TabsTrigger
+            value="overdue"
+            className="data-[state=active]:text-red-600"
+          >
             Atrasadas ({overdueReviews.length})
           </TabsTrigger>
-          <TabsTrigger value="today">
-            Hoje ({todayReviews.length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Concluídas
-          </TabsTrigger>
+          <TabsTrigger value="today">Hoje ({todayReviews.length})</TabsTrigger>
+          <TabsTrigger value="completed">Concluídas</TabsTrigger>
         </TabsList>
 
         <ScrollArea className="h-[calc(100vh-240px)] pr-4">
@@ -54,11 +58,11 @@ export default function Revisoes() {
               </div>
             ) : (
               overdueReviews.map((review) => (
-                <ReviewCard 
-                  key={review.id} 
-                  review={review} 
+                <ReviewCard
+                  key={review.id}
+                  review={review}
                   variant="overdue"
-                  onToggle={() => toggleReviewComplete(review.id)} 
+                  onToggle={() => toggleReview(review.id)}
                 />
               ))
             )}
@@ -68,15 +72,17 @@ export default function Revisoes() {
             {todayReviews.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
                 <p>Tudo pronto por hoje.</p>
-                <p className="text-xs">Aproveite para descansar ou adiantar estudos.</p>
+                <p className="text-xs">
+                  Aproveite para descansar ou adiantar estudos.
+                </p>
               </div>
             ) : (
               todayReviews.map((review) => (
-                <ReviewCard 
-                  key={review.id} 
-                  review={review} 
+                <ReviewCard
+                  key={review.id}
+                  review={review}
                   variant="today"
-                  onToggle={() => toggleReviewComplete(review.id)} 
+                  onToggle={() => toggleReview(review.id)}
                 />
               ))
             )}
@@ -89,11 +95,11 @@ export default function Revisoes() {
               </div>
             ) : (
               completedReviews.map((review) => (
-                <ReviewCard 
-                  key={review.id} 
-                  review={review} 
+                <ReviewCard
+                  key={review.id}
+                  review={review}
                   variant="completed"
-                  onToggle={() => toggleReviewComplete(review.id)} 
+                  onToggle={() => toggleReview(review.id)}
                 />
               ))
             )}

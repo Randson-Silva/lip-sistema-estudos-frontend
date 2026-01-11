@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { addDays, format } from 'date-fns';
-import { useStudy } from '@/contexts/StudyContext';
-import { useDisciplines } from '@/contexts/DisciplineContext';
-import { normalizeDate, formatDateForStorage } from '@/lib/date-utils';
+
+import { useDisciplines } from "@/contexts/DisciplineContext";
+import { normalizeDate, formatDateForStorage } from "@/lib/date-utils";
+import { useStudies } from "./use-studies";
 
 const studySchema = z.object({
   disciplineId: z.string({ required_error: "Selecione uma disciplina." }),
@@ -21,70 +21,84 @@ export type StudyFormValues = z.infer<typeof studySchema>;
 export function useStudyForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const editId = searchParams.get('edit');
-  const dateParam = searchParams.get('date');
 
-  const { addStudyRecord, updateStudyRecord, studyRecords, algorithmSettings } = useStudy();
+  const editId = searchParams.get("edit");
+  const dateParam = searchParams.get("date");
+
   const { disciplines } = useDisciplines();
+  const { studies, createStudy, updateStudy, isCreating, isUpdating } =
+    useStudies();
 
   const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
 
   const form = useForm<StudyFormValues>({
     resolver: zodResolver(studySchema),
     defaultValues: {
-      disciplineId: '',
-      timeSpent: '01:00',
-      topic: '',
-      notes: '',
+      disciplineId: "",
+      timeSpent: "01:00",
+      topic: "",
+      notes: "",
       date: dateParam ? normalizeDate(dateParam) : new Date(),
     },
   });
 
-
+  // Carregar dados para edição
   useEffect(() => {
-    if (editId) {
-      const studyToEdit = studyRecords.find(s => s.id === editId);
+    if (editId && studies.length > 0) {
+      const studyToEdit = studies.find((s) => s.id === editId);
+
       if (studyToEdit) {
         form.reset({
           disciplineId: studyToEdit.disciplineId,
           timeSpent: studyToEdit.timeSpent,
           date: normalizeDate(studyToEdit.date),
           topic: studyToEdit.topic,
-          notes: studyToEdit.notes || '',
+          notes: studyToEdit.notes || "",
         });
       }
     }
-  }, [editId, studyRecords, form]);
+  }, [editId, studies, form]);
 
+  // Submit
   const onSubmit = (data: StudyFormValues) => {
-    const selectedDiscipline = disciplines.find(d => d.id === data.disciplineId);
-    if (!selectedDiscipline) return;
+    const disciplineExists = disciplines.some(
+      (d) => d.id === data.disciplineId
+    );
 
-    const formattedDate = formatDateForStorage(data.date);
+    if (!disciplineExists) return;
 
-    const commonData = {
+    const payload = {
       disciplineId: data.disciplineId,
       timeSpent: data.timeSpent,
-      date: formattedDate,
+      date: formatDateForStorage(data.date),
       topic: data.topic,
       notes: data.notes,
     };
 
     if (editId) {
-      updateStudyRecord(editId, commonData);
-      setSuccessMessage("Registro atualizado com sucesso!");
+      updateStudy(
+        { id: editId, data: payload },
+        {
+          onSuccess: () => {
+            setSuccessMessage("Registro atualizado com sucesso!");
+            setShowSuccess(true);
+          },
+        }
+      );
     } else {
-      addStudyRecord(commonData);
-      setSuccessMessage("Estudo registrado no histórico!");
+      createStudy(payload, {
+        onSuccess: () => {
+          setSuccessMessage("Estudo registrado no histórico!");
+          setShowSuccess(true);
+        },
+      });
     }
-
-    setShowSuccess(true);
   };
 
   const handleCloseSuccess = () => {
     setShowSuccess(false);
-    navigate('/home');
+    navigate("/home");
   };
 
   return {
@@ -94,6 +108,7 @@ export function useStudyForm() {
     showSuccess,
     successMessage,
     handleCloseSuccess,
-    isEditing: !!editId
+    isEditing: !!editId,
+    isSubmitting: isCreating || isUpdating,
   };
 }
