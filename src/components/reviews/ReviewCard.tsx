@@ -7,6 +7,7 @@ import { getDisciplineTheme } from "@/lib/constants";
 import { differenceInCalendarDays } from "date-fns";
 import { normalizeDate } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
+import { useSettings } from "@/hooks/use-settings";
 
 interface ReviewCardProps {
   review: Review;
@@ -22,6 +23,8 @@ export function ReviewCard({
   onDelete,
 }: ReviewCardProps) {
   const { disciplines } = useDisciplines();
+  const { getRevisionLabel } = useSettings();
+
   const discipline = disciplines.find((d) => d.id === review.disciplineId) || {
     id: "unknown",
     name: review.disciplineName || "Desconhecido",
@@ -34,15 +37,6 @@ export function ReviewCard({
     variant === "overdue"
       ? differenceInCalendarDays(new Date(), normalizeDate(review.dueDate))
       : 0;
-
-  const getRevisionLabel = (num: number) => {
-    const labels: Record<number, string> = {
-      1: "1ª Revisão (D+1)",
-      2: "2ª Revisão (D+7)",
-      3: "3ª Revisão (D+14)",
-    };
-    return labels[num] || `Revisão ${num}`;
-  };
 
   const getOverdueLabel = (days: number) => {
     if (days <= 1) return "Atrasado: Ontem";

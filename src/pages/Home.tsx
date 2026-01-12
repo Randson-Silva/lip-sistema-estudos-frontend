@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 import { FileText, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useStudies } from "@/hooks/use-studies";
-import { downloadPdfReport } from "@/http/api/report";
+import { downloadSchedulePdf } from "@/http/api/report";
 import { toast } from "sonner";
 
 import type { StudyRecord } from "@/types/study";
@@ -18,9 +18,7 @@ import { useReviews } from "@/hooks/use-reviews";
 
 export default function Home() {
   const navigate = useNavigate();
-
   const { allReviews, toggleReview } = useReviews();
-
   const { studies: apiStudies, isLoading } = useStudies();
 
   const studies: StudyRecord[] = apiStudies.map((study: StudyResponse) => ({
@@ -53,24 +51,20 @@ export default function Home() {
 
   const handleExport = async () => {
     setIsExporting(true);
-
     try {
-      const response = await downloadPdfReport();
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Chama a URL específica de Cronograma
+      const response = await downloadSchedulePdf();
 
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `cronograma-${format(new Date(), "yyyy-MM-dd")}.pdf`;
-
+      link.download = `cronograma-${format(new Date(), "dd-MM-yyyy")}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-
-      toast.success("PDF baixado com sucesso!");
+      toast.success("Cronograma baixado!");
     } catch (error) {
-      toast.error("Erro ao gerar PDF", {
-        description: "Tente novamente em instantes.",
-      });
+      toast.error("Erro ao baixar cronograma");
     } finally {
       setIsExporting(false);
     }

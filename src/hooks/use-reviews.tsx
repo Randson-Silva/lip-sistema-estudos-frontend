@@ -6,6 +6,12 @@ import {
 } from "@/http/api/review";
 import { toast } from "sonner";
 import type { Review } from "@/types/review";
+import { isAfter, startOfDay, parseISO } from "date-fns";
+
+const normalizeDate = (dateStr: string) => {
+  if (!dateStr) return new Date();
+  return startOfDay(parseISO(dateStr));
+};
 
 export function useReviews() {
   const queryClient = useQueryClient();
@@ -35,17 +41,34 @@ export function useReviews() {
   const toggleMutation = useMutation({
     mutationFn: async (reviewId: string) => {
       const review = allReviews.find((r) => r.id === reviewId);
-      if (!review) throw new Error("Revisão não encontrada");
+      if (!review) return;
 
-      const today = new Date().toISOString().split("T")[0];
-      if (review.dueDate !== today) {
-        throw new Error("Revisão fora da data");
+      const reviewDate = normalizeDate(review.dueDate);
+      const today = startOfDay(new Date());
+
+      if (!review.completed && isAfter(reviewDate, today)) {
+        toast.warning("Revisão futura", {
+          description:
+            "Você só pode concluir revisões agendadas para hoje ou que estejam atrasadas.",
+        });
+        return;
       }
 
       return toggleReview(reviewId);
     },
 
     onMutate: async (reviewId) => {
+      const review = allReviews.find((r) => r.id === reviewId);
+      const today = startOfDay(new Date());
+
+      if (
+        review &&
+        !review.completed &&
+        isAfter(normalizeDate(review.dueDate), today)
+      ) {
+        return;
+      }
+
       await queryClient.cancelQueries({ queryKey: ["reviews"] });
       const previous = queryClient.getQueryData<Review[]>(["reviews"]);
 
@@ -66,36 +89,47 @@ export function useReviews() {
       return { previous };
     },
 
-    onError: (error, reviewId, context) => {
-      queryClient.setQueryData(["reviews"], context?.previous);
-      toast.error("Esta revisão só pode ser concluída no dia correto");
+    onError: (err, reviewId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["reviews"], context.previous);
+      }
+      toast.error("Erro ao atualizar revisão", {
+        description: "Ocorreu um problema na comunicação com o servidor.",
+      });
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (!data) return;
+
       queryClient.invalidateQueries({ queryKey: ["reviews"] });
-      toast.success("Revisão atualizada!");
+      queryClient.invalidateQueries({ queryKey: ["reviews", "statistics"] });
+      toast.success("Status atualizado!");
     },
   });
 
+  const todayStart = startOfDay(new Date());
+
   const overdueReviews = allReviews.filter(
-    (r) => !r.completed && new Date(r.dueDate) < new Date()
+    (r) => !r.completed && normalizeDate(r.dueDate) < todayStart
   );
 
   const todayReviews = allReviews.filter((r) => {
-    const today = new Date().toISOString().split("T")[0];
-    return !r.completed && r.dueDate === today;
+    return (
+      !r.completed &&
+      normalizeDate(r.dueDate).getTime() === todayStart.getTime()
+    );
   });
 
   const completedReviews = allReviews.filter((r) => r.completed);
 
-  const pendingReviews = allReviews.filter((r) => !r.completed);
+  const overdueCount = overdueReviews.length;
 
   return {
     allReviews,
     overdueReviews,
     todayReviews,
     completedReviews,
-    pendingReviews,
+    overdueCount,
     statistics,
     isLoading,
     error,

@@ -10,53 +10,30 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Calendar, Loader2, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import {
-  getSettings,
-  updateSettings,
-  type UserSettings,
-} from "@/http/api/settings";
+import { ArrowRight, Calendar, Loader2 } from "lucide-react";
+import { useSettings } from "@/hooks/use-settings";
 
 export default function Configuracoes() {
-  const [settings, setSettings] = useState<UserSettings>({
+  const { settings, isLoading, updateSettings, isUpdating } = useSettings();
+
+  const [intervals, setIntervals] = useState({
     firstRevisionInterval: 1,
     secondRevisionInterval: 7,
     thirdRevisionInterval: 14,
   });
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const response = await getSettings();
-      setSettings(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar configurações:", error);
-      toast.error("Erro ao carregar configurações");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await updateSettings(settings);
-      toast.success("Configurações salvas!", {
-        description:
-          "Os novos intervalos serão aplicados aos próximos estudos.",
+    if (settings) {
+      setIntervals({
+        firstRevisionInterval: settings.firstRevisionInterval,
+        secondRevisionInterval: settings.secondRevisionInterval,
+        thirdRevisionInterval: settings.thirdRevisionInterval,
       });
-    } catch (error) {
-      toast.error("Erro ao salvar configurações");
-    } finally {
-      setIsSaving(false);
     }
+  }, [settings]);
+
+  const handleSave = () => {
+    updateSettings(intervals);
   };
 
   if (isLoading) {
@@ -95,15 +72,15 @@ export default function Configuracoes() {
                     id="first"
                     type="number"
                     min={1}
-                    value={settings.firstRevisionInterval}
+                    value={intervals.firstRevisionInterval}
                     onChange={(e) =>
-                      setSettings((prev) => ({
+                      setIntervals((prev) => ({
                         ...prev,
                         firstRevisionInterval: parseInt(e.target.value) || 1,
                       }))
                     }
                     className="w-20 h-12 text-center text-lg font-semibold"
-                    disabled={isSaving}
+                    disabled={isUpdating}
                   />
                 </div>
                 <span className="text-muted-foreground mt-6">dia(s)</span>
@@ -123,15 +100,15 @@ export default function Configuracoes() {
                     id="second"
                     type="number"
                     min={1}
-                    value={settings.secondRevisionInterval}
+                    value={intervals.secondRevisionInterval}
                     onChange={(e) =>
-                      setSettings((prev) => ({
+                      setIntervals((prev) => ({
                         ...prev,
                         secondRevisionInterval: parseInt(e.target.value) || 1,
                       }))
                     }
                     className="w-20 h-12 text-center text-lg font-semibold"
-                    disabled={isSaving}
+                    disabled={isUpdating}
                   />
                 </div>
                 <span className="text-muted-foreground mt-6">dias</span>
@@ -151,15 +128,15 @@ export default function Configuracoes() {
                     id="third"
                     type="number"
                     min={1}
-                    value={settings.thirdRevisionInterval}
+                    value={intervals.thirdRevisionInterval}
                     onChange={(e) =>
-                      setSettings((prev) => ({
+                      setIntervals((prev) => ({
                         ...prev,
                         thirdRevisionInterval: parseInt(e.target.value) || 1,
                       }))
                     }
                     className="w-20 h-12 text-center text-lg font-semibold"
-                    disabled={isSaving}
+                    disabled={isUpdating}
                   />
                 </div>
                 <span className="text-muted-foreground mt-6">dias</span>
@@ -168,9 +145,9 @@ export default function Configuracoes() {
               <Button
                 onClick={handleSave}
                 className="ml-auto mt-6"
-                disabled={isSaving}
+                disabled={isUpdating}
               >
-                {isSaving ? (
+                {isUpdating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Salvando...
@@ -188,62 +165,6 @@ export default function Configuracoes() {
                 Revisões já criadas manterão seus intervalos originais.
               </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Card de Preferências */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Preferências</CardTitle>
-            <CardDescription>
-              Configure notificações e integrações.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <Calendar size={20} className="text-muted-foreground" />
-                </div>
-                <div className="space-y-0.5">
-                  <Label className="font-medium">Google Calendar</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Sincronize suas revisões com o calendário
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline">Conectar</Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Zona de Perigo */}
-        <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
-          <CardHeader>
-            <CardTitle className="text-lg text-red-600 flex items-center gap-2">
-              <Trash2 size={20} /> Zona de Perigo (Dev Only)
-            </CardTitle>
-            <CardDescription>
-              Utilize estas opções caso encontre inconsistências ou bugs nos
-              dados salvos.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (
-                  confirm(
-                    "Tem certeza? Isso apagará TODOS os seus estudos e revisões locais."
-                  )
-                ) {
-                  localStorage.clear();
-                  window.location.reload();
-                }
-              }}
-            >
-              Resetar Todos os Dados (Factory Reset)
-            </Button>
           </CardContent>
         </Card>
       </div>

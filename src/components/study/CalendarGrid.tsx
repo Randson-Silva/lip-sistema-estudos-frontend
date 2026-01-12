@@ -13,10 +13,10 @@ interface CalendarGridProps {
   studies: StudyRecord[];
   reviews: Review[];
   currentDate: Date;
-  onDateSelect: (date: Date) => void;
+  selectedDate: Date | null; // Adicionado
+  onDateSelect: (date: Date) => void; // Adicionado
   onEditStudy: (study: StudyRecord) => void;
   onAddStudy: (date: Date) => void;
-  selectedDate: Date | null;
   onToggleReview: (id: string) => void;
 }
 
@@ -24,6 +24,8 @@ export function CalendarGrid({
   studies,
   reviews,
   currentDate,
+  selectedDate,
+  onDateSelect,
   onEditStudy,
   onAddStudy,
   onToggleReview,
@@ -42,20 +44,19 @@ export function CalendarGrid({
   };
 
   return (
-    <div className="w-full">
-      {/* Cabeçalho Desktop */}
-      <div className="hidden md:grid grid-cols-7 gap-4 mb-2">
+    <div className="flex flex-col flex-1 min-h-0 min-w-0">
+      <div className="hidden md:grid grid-cols-7 gap-4 mb-3 min-w-0">
         {weekDays.map((day) => (
-          <div key={day.toString()} className="text-center space-y-2">
-            <div className="font-medium text-muted-foreground capitalize text-sm">
+          <div key={day.toString()} className="text-center space-y-2 min-w-0">
+            <div className="text-sm font-medium capitalize text-muted-foreground truncate">
               {format(day, "EEE", { locale: ptBR })}
             </div>
             <div
               className={cn(
-                "mx-auto w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold transition-colors",
+                "mx-auto w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
                 isSameDay(day, new Date())
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-foreground bg-secondary/50"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/60"
               )}
             >
               {format(day, "d")}
@@ -64,8 +65,7 @@ export function CalendarGrid({
         ))}
       </div>
 
-      {/* Grid de Dias */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-7 md:auto-rows-fr gap-4 flex-1 min-h-0 min-w-0">
         {weekDays.map((day) => {
           const dayStudies = getStudiesForDate(day);
           const dayReviews = getReviewsForDate(day);
@@ -75,79 +75,76 @@ export function CalendarGrid({
             <div
               key={day.toString()}
               className={cn(
-                "group/col relative flex flex-col gap-2 rounded-lg border transition-all",
-                "md:min-h-[150px] md:border-l md:border-t-0 md:border-r-0 md:border-b-0 md:border-border/40 md:bg-transparent md:p-2",
-                "min-h-[120px] p-4 bg-card border-border shadow-sm md:shadow-none"
+                "flex flex-col rounded-lg border bg-card min-h-0 min-w-0 h-full overflow-hidden",
+                "md:border-l md:border-t-0 md:border-r-0 md:border-b-0 md:border-border/40 md:bg-transparent"
               )}
             >
-              {/* Cabeçalho Mobile */}
-              <div className="md:hidden flex items-center justify-between mb-2 pb-2 border-b border-border/50">
-                <div className="flex items-center gap-2">
+              <div className="md:hidden p-3 border-b flex justify-between items-center min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   <div
                     className={cn(
-                      "w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm",
+                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
                       isToday
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                        : "bg-muted"
                     )}
                   >
                     {format(day, "d")}
                   </div>
-                  <span
-                    className={cn(
-                      "font-medium capitalize",
-                      isToday && "text-primary"
-                    )}
-                  >
+                  <span className="capitalize font-medium truncate">
                     {format(day, "EEEE", { locale: ptBR })}
                   </span>
                 </div>
+
                 {isToday && (
-                  <span className="text-xs text-primary font-medium px-2 py-0.5 bg-primary/10 rounded-full">
+                  <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full shrink-0">
                     Hoje
                   </span>
                 )}
               </div>
 
-              <ScrollArea className="flex-1 md:-mr-2 md:pr-2">
-                <div className="space-y-2 pb-14 md:pb-16">
+              <ScrollArea className="flex-1 min-h-0 min-w-0 px-2">
+                <div className="space-y-2 py-2 min-w-0">
                   {dayStudies.map((study) => (
-                    <StudyCard
+                    <div
                       key={study.id}
-                      study={study}
-                      onClick={() => onEditStudy(study)}
-                    />
+                      className="min-w-0 max-w-full overflow-hidden"
+                    >
+                      <StudyCard
+                        study={study}
+                        onClick={() => onEditStudy(study)}
+                      />
+                    </div>
                   ))}
 
                   {dayReviews.map((review) => (
-                    <ReviewCardMini
+                    <div
                       key={review.id}
-                      review={review}
-                      onToggle={() => onToggleReview(review.id)}
-                    />
+                      className="min-w-0 max-w-full overflow-hidden"
+                    >
+                      <ReviewCardMini
+                        review={review}
+                        onToggle={() => onToggleReview(review.id)}
+                      />
+                    </div>
                   ))}
 
                   {dayStudies.length === 0 && dayReviews.length === 0 && (
-                    <div className="md:hidden text-center py-4 text-muted-foreground text-xs flex flex-col items-center gap-1 opacity-60">
+                    <div className="md:hidden py-6 text-center text-xs text-muted-foreground opacity-60 flex flex-col items-center gap-1">
                       <CalendarIcon size={16} />
-                      <span>Nada registrado</span>
+                      Nada registrado
                     </div>
                   )}
                 </div>
               </ScrollArea>
 
-              {/* BOTÃO ADICIONAR — INTACTO */}
-              <div className="mt-auto pt-2 md:absolute md:bottom-2 md:left-2 md:right-2 md:opacity-0 md:group-hover/col:opacity-100 transition-opacity duration-200 z-10">
+              <div className="p-2 border-t bg-card/80 backdrop-blur-sm min-w-0">
                 <button
                   onClick={() => onAddStudy(day)}
-                  className={cn(
-                    "w-full flex items-center justify-center gap-1.5 rounded-md border border-dashed border-muted-foreground/30 transition-all",
-                    "py-2 text-xs text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5",
-                    "md:py-1.5 bg-card/80 backdrop-blur-sm shadow-sm"
-                  )}
+                  className="w-full py-2 text-xs rounded-md border border-dashed text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition truncate"
                 >
-                  <Plus size={12} />
-                  <span>Adicionar</span>
+                  <Plus size={12} className="inline mr-1" />
+                  Adicionar
                 </button>
               </div>
             </div>

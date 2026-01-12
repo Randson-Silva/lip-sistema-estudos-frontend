@@ -23,37 +23,39 @@ export function StudyCard({ study, onClick }: StudyCardProps) {
   return (
     <div
       onClick={onClick}
-      className={cn(
-        "cursor-pointer group relative flex flex-col gap-1.5 p-3 rounded-md border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md",
-        `border-l-[3px] ${theme.border}`
-      )}
       role="button"
       tabIndex={0}
-      title="Clique para editar"
+      className={cn(
+        "group cursor-pointer rounded-lg border bg-card p-3 flex flex-col gap-2 shadow-sm transition",
+        "hover:shadow-md hover:scale-[1.01]",
+        `border-l-4 ${theme.border}`
+      )}
     >
-      <div className="grid grid-cols-[1fr_auto] items-center gap-2">
-        <div className="min-w-0">
-          <Badge
-            variant="secondary"
-            className={cn(
-              "px-2 py-0.5 text-[11px] font-bold tracking-wide truncate block w-fit max-w-full",
-              theme.badge
-            )}
-            title={discipline.name}
-          >
-            {discipline.name}
-          </Badge>
-        </div>
+      <div className="flex justify-between items-start gap-2">
+        <Badge
+          variant="secondary"
+          className={cn(
+            "px-2 py-0.5 text-[10px] font-bold uppercase",
+            theme.badge
+          )}
+        >
+          {discipline.name}
+        </Badge>
 
         <Pencil
-          size={14}
-          className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+          size={9}
+          className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity"
         />
       </div>
 
-      <h4 className="text-sm font-medium leading-tight line-clamp-2 text-foreground/90">
+      <h4 className="text-sm font-semibold leading-snug break-words">
         {study.topic}
       </h4>
+
+      <div className="pt-1 border-t text-xs text-muted-foreground flex justify-between">
+        <span className="font-medium">{study.timeSpent}</span>
+        {study.notes && <span className="italic text-[10px]">Anotações</span>}
+      </div>
     </div>
   );
 }
